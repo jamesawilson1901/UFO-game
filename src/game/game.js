@@ -8,6 +8,8 @@ import { ZONES, MEADOW, zoneAt, WORLD } from '../world/zones.js'
 import { Ufo } from './ufo.js'
 import { CritterEntity, HumanEntity, PropEntity, HUMANS, STATE } from './entities.js'
 import { Hud } from '../ui/hud.js'
+import { Minimap } from '../ui/minimap.js'
+import { RANKS, rankFor } from './ranks.js'
 
 const SFX = {
   beam: 'forceField_002',
@@ -22,6 +24,8 @@ const SFX = {
   full: 'computerNoise_002',
   deposit: 'doorOpen_000',
 }
+
+const MEADOW_ZONE = { id: 'meadow', at: [0, 0], radius: 110 }
 
 export class Game {
   constructor(canvas) {
@@ -41,6 +45,9 @@ export class Game {
     this.shake = 0
     this._tmpV = new THREE.Vector3()
     this.stats = { abducted: 0, best: {}, mooCount: 0 }
+    this.rankIndex = 0
+    this.respawns = []
+    this._propScenes = new Map()
   }
 
   /* ══ setup ═══════════════════════════════════════════════════════ */
@@ -86,11 +93,42 @@ export class Game {
     await this._loadAudio()
 
     this._particles()
+    this.minimap = new Minimap()
+    this._rankBadge()
     this.input.attach()
     addEventListener('resize', () => this._resize())
     this._resize()
 
     return this
+  }
+
+  _rankBadge() {
+    const el = document.createElement('div')
+    el.className = 'rank'
+    el.innerHTML = '<b></b><i><u></u></i>'
+    document.getElementById('hud').appendChild(el)
+    this.rankEl = el
+    this.rankLabel = el.querySelector('b')
+    this.rankBar = el.querySelector('u')
+    this._paintRank(true)
+  }
+
+  _paintRank(silent = false) {
+    const { index, rank, next, frac } = rankFor(this.score)
+    this.rankLabel.textContent = rank.name
+    this.rankBar.style.width = `${Math.round(frac * 100)}%`
+    if (index > this.rankIndex && !silent) {
+      this.rankIndex = index
+      this.rankEl.classList.remove('up')
+      void this.rankEl.offsetWidth
+      this.rankEl.classList.add('up')
+      audio.play(SFX.deposit, { volume: 0.7 })
+      this.hud.popup(`NEW RANK: ${rank.name}!`, innerWidth / 2, innerHeight * 0.42)
+      this.burst(this.ufo.pos.clone(), 0xffd23f, 46, 11)
+      this.shake = 1
+    }
+    this.rankIndex = index
+    this.nextRank = next
   }
 
   async _sky() {
@@ -148,8 +186,23 @@ export class Game {
             z = zn.at[1] + Math.sin(a) * r
           }
           if (this.world.heightAt(x, z) < 0.6) continue
-          this._add(new CritterEntity(kind, x, z, rng))
+          this._add(new CritterEntity(kind, x, z, rng), { type: 'critter', kind, zone: zn.id })
         }
+      }
+    }
+
+    /* One golden cow per district: rare, fast, and worth eight ordinary
+       ones. Gives a five-year-old something to point at and shout about. */
+    for (const zn of ZONES) {
+      for (let tries = 0; tries < 30; tries++) {
+        const a = rng.range(0, Math.PI * 2)
+        const r = Math.sqrt(rng()) * zn.radius * 0.75
+        const x = zn.at[0] + Math.cos(a) * r
+        const z = zn.at[1] + Math.sin(a) * r
+        if (this.world.heightAt(x, z) < 1.2) continue
+        this._add(new CritterEntity('cow', x, z, rng, { golden: true }),
+          { type: 'critter', kind: 'cow', zone: zn.id, golden: true })
+        break
       }
     }
 
@@ -159,7 +212,8 @@ export class Game {
       const r = 30 + Math.sqrt(rng()) * 78
       const x = Math.cos(a) * r, z = Math.sin(a) * r
       if (this.world.heightAt(x, z) < 0.8) continue
-      this._add(new CritterEntity(rng.pick(['cow', 'sheep', 'calf', 'chicken']), x, z, rng))
+      const kind = rng.pick(['cow', 'sheep', 'calf', 'chicken'])
+      this._add(new CritterEntity(kind, x, z, rng), { type: 'critter', kind, zone: 'meadow' })
     }
 
     step('Hiring the extras…')
@@ -179,7 +233,8 @@ export class Game {
         const x = zn.at[0] + Math.cos(a) * r
         const z = zn.at[1] + Math.sin(a) * r
         if (this.world.heightAt(x, z) < 0.9) continue
-        this._add(new HumanEntity(rng.pick(kinds), x, z, rng))
+        const hk = rng.pick(kinds)
+        this._add(new HumanEntity(hk, x, z, rng), { type: 'human', kind: hk, zone: zn.id })
       }
     }
 
@@ -211,19 +266,80 @@ export class Game {
         const x = zn.at[0] + Math.cos(a) * r
         const z = zn.at[1] + Math.sin(a) * r
         if (this.world.heightAt(x, z) < 0.8) continue
+        this._propScenes.set(path, g.scene)
         const m = g.scene.clone(true)
         fitToWidth(m, size)
         this._add(new PropEntity(m, x, z, {
           label, icon, points, radius: size, mass: 0.8 + size * 0.4,
-        }))
+        }), { type: 'prop', path, label, icon, points, size, zone: zn.id })
       }
     }
   }
 
-  _add(e) {
+  _add(e, spec = null) {
+    e.spawnSpec = spec
     this.entities.push(e)
     this.scene.add(e.root)
     return e
+  }
+
+  /**
+   * The world has to keep restocking or a determined seven-year-old strips it
+   * bare in ten minutes and the game quietly ends. Anything abducted comes
+   * back somewhere else in its own district after a short delay, so the map
+   * stays alive without ever spawning something on top of the player.
+   */
+  _queueRespawn(e) {
+    const spec = e.spawnSpec
+    if (!spec) return
+    this.respawns.push({ spec, at: this.t + 18 + this.rng() * 22 })
+  }
+
+  _drainRespawns() {
+    if (!this.respawns.length) return
+    for (let i = this.respawns.length - 1; i >= 0; i--) {
+      const r = this.respawns[i]
+      if (this.t < r.at) continue
+      this.respawns.splice(i, 1)
+      const born = this._spawnFromSpec(r.spec)
+      if (born) this.burst(born.root.position.clone().setY(born.root.position.y + 1), 0x9dffbe, 8, 3)
+    }
+  }
+
+  _spawnFromSpec(spec) {
+    const rng = this.rng
+    const zn = spec.zone === 'meadow' ? MEADOW_ZONE : ZONES.find((z) => z.id === spec.zone)
+    // Try a few times for a spot that is on land and not under the saucer.
+    for (let tries = 0; tries < 24; tries++) {
+      const a = rng.range(0, Math.PI * 2)
+      const r = Math.sqrt(rng()) * (zn ? zn.radius * 0.82 : 100)
+      const x = (zn ? zn.at[0] : 0) + Math.cos(a) * r
+      const z = (zn ? zn.at[1] : 0) + Math.sin(a) * r
+      if (this.world.heightAt(x, z) < 1.2) continue
+      if (Math.hypot(x - this.ufo.pos.x, z - this.ufo.pos.z) < 60) continue
+
+      if (spec.type === 'critter') {
+        return this._add(new CritterEntity(spec.kind, x, z, rng, { golden: spec.golden }), spec)
+      }
+      if (spec.type === 'human') {
+        return this._add(new HumanEntity(spec.kind, x, z, rng), spec)
+      }
+      if (spec.type === 'prop') {
+        const g = assets.cache.get(spec.path)
+        const scene = g?.scene ?? this._propScenes?.get(spec.path)
+        if (!scene) return null
+        const m = scene.clone(true)
+        fitToWidth(m, spec.size)
+        return this._add(new PropEntity(m, x, z, {
+          label: spec.label, icon: spec.icon, points: spec.points,
+          radius: spec.size, mass: 0.8 + spec.size * 0.4,
+        }), spec)
+      }
+      return null
+    }
+    // Couldn't place it this time; try again shortly.
+    this.respawns.push({ spec, at: this.t + 6 })
+    return null
   }
 
   /* ══ audio ═══════════════════════════════════════════════════════ */
@@ -328,13 +444,15 @@ export class Game {
     this.last = now
     if (this.paused) { this.renderer.render(this.scene, this.camera); return }
     dt = Math.min(dt, 1 / 20)                 // never let a stall teleport things
-    this.t += dt
     this.update(dt)
     this.renderer.render(this.scene, this.camera)
     this.input.endFrame()
   }
 
   update(dt) {
+    // The simulation owns its own clock so a fixed-step caller (the headless
+    // playtest) advances time exactly like the render loop does.
+    this.t += dt
     const { input, ufo, world } = this
     input.poll()
 
@@ -370,9 +488,11 @@ export class Game {
       this.hud.setCombo(1, 0)
     }
 
+    this._drainRespawns()
     this._updateParticles(dt)
     this._camera(dt)
     this._zoneWatch()
+    this.minimap.draw(ufo, dt)
   }
 
   /* ══ actions ═════════════════════════════════════════════════════ */
@@ -421,8 +541,13 @@ export class Game {
     if (this.cargo.length > this.cargoMax) this.cargo.shift()
     this.hud.setCargo(this.cargo.map((c) => c.icon))
     this.hud.setScore(this.score)
+    this._paintRank()
 
     const big = e.points >= 200
+    if (e.golden) {
+      this.burst(this.ufo.pos.clone().setY(this.ufo.pos.y - 3), 0xffd23f, 60, 12)
+      this.shake = 1
+    }
     audio.play(big ? SFX.collectBig : SFX.collect, {
       volume: big ? 0.75 : 0.5, rate: 1 + this.combo * 0.06, throttle: 0.02,
     })
@@ -439,8 +564,14 @@ export class Game {
     this.hud.popup(`+${gained.toLocaleString()}`, sx, sy)
     this.hud.popup(`${e.icon} ${e.label}${mult > 1 ? `  x${mult}` : ''}`, sx, sy + 34, true)
 
-    // Retire the entity's resources after a beat.
-    setTimeout(() => e.dispose(), 50)
+    this._queueRespawn(e)
+    // Retire the entity's resources after a beat, and drop it from the list
+    // so the update loop doesn't walk an ever-growing array of corpses.
+    setTimeout(() => {
+      e.dispose()
+      const i = this.entities.indexOf(e)
+      if (i >= 0) this.entities.splice(i, 1)
+    }, 60)
   }
 
   /* ══ camera & zones ══════════════════════════════════════════════ */

@@ -43,11 +43,27 @@ Four districts around a central meadow, each with its own music:
   a ghost ship.
 - **The Whispering Wilds** — dense forest, boulders, mushrooms and a camp.
 
+Each district has a **golden cow**: eight times the points, noticeably faster,
+and impossible to miss from the air.
+
 ## Scoring
 
 Every abduction scores, and chaining them within a few seconds builds a combo
 multiplier up to ×9. Rarer targets are worth more — a chicken is 40, a cow 100,
-a pirate captain 400, a treasure chest 300. The high score persists locally.
+a pirate captain 400, a treasure chest 300, a golden cow 800. The high score
+persists locally.
+
+Score also drives a **rank ladder**, from Space Cadet up to Supreme Cow
+Commander. There is no way to lose rank and no way to fail.
+
+Anything you abduct is restocked elsewhere in its own district after 20–40
+seconds, so the world never runs out.
+
+## Finding your way
+
+A minimap in the top-left shows the four districts by colour and icon, with
+your saucer as an arrow. It is deliberately wordless — a five-year-old
+navigates by colour and shape, not labels.
 
 ## Project layout
 
@@ -59,7 +75,22 @@ src/
   ui/        HUD and styles
 tools/
   extract-assets.sh   rebuilds public/assets from the source packs
-  smoke.mjs           headless boot + play test
+  smoke.mjs           headless boot + drive test
+  playtest.mjs        fixed-step gameplay test (scoring, combos, respawn)
+  touchtest.mjs       multi-touch check on a simulated iPad
+  perf.mjs            per-district draw-call and triangle counts
+  shots.mjs           screenshots of every landmark
 ```
+
+Run them against a preview server:
+
+```bash
+npm run build && npm run preview &
+node tools/playtest.mjs
+```
+
+Note that the headless browser renders through SwiftShader at roughly 1 fps,
+so the real-time tests deliberately step `game.update()` directly rather than
+relying on wall-clock time.
 
 Asset licences are in [CREDITS.md](CREDITS.md).

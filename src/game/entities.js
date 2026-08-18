@@ -175,16 +175,40 @@ export class Abductable {
 
 /* ══ farm animals ══════════════════════════════════════════════════ */
 export class CritterEntity extends Abductable {
-  constructor(kind, x, z, rng) {
+  constructor(kind, x, z, rng, { golden = false } = {}) {
     const built = makeCritter(kind, rng)
     const def = SPECIES[kind]
     super(built.root, {
-      label: def.label, icon: def.icon, points: def.points,
-      speed: def.speed, x, z, radius: built.root.userData.radius,
-      mass: def.size * 1.1, sfx: def.moo, homeRange: 24,
+      label: golden ? `Golden ${def.label}` : def.label,
+      icon: golden ? '🌟' : def.icon,
+      points: golden ? def.points * 8 : def.points,
+      speed: def.speed * (golden ? 1.5 : 1), x, z,
+      radius: built.root.userData.radius,
+      mass: def.size * 1.1, sfx: def.moo, homeRange: golden ? 40 : 24,
     })
     this.built = built
+    this.golden = golden
+    if (golden) {
+      // Worth eight of its ordinary cousins, runs faster, and unmistakable
+      // from the air. One shared material so the whole animal is a single
+      // draw call rather than thirty.
+      const gold = CritterEntity._goldMat()
+      built.root.traverse((o) => { if (o.isMesh) o.material = gold })
+      built.root.scale.setScalar(1.15)
+    }
     this.root.position.set(x, 0, z)
+  }
+
+  static _gold = null
+  static _goldMat() {
+    if (!CritterEntity._gold) {
+      // vertexColors stays off so the gold overrides the baked cow colours.
+      CritterEntity._gold = new THREE.MeshStandardMaterial({
+        color: 0xffd23f, emissive: 0x6b4a00, emissiveIntensity: 0.55,
+        metalness: 0.35, roughness: 0.3, flatShading: true, vertexColors: false,
+      })
+    }
+    return CritterEntity._gold
   }
 
   animate(dt, t) {
@@ -198,15 +222,22 @@ export class CritterEntity extends Abductable {
 }
 
 /* ══ people ════════════════════════════════════════════════════════ */
+/*
+ * The packs have no medical or pirate skins, only fantasy adventurers. Tinting
+ * their textured materials just multiplies everything toward black, so staff
+ * are given a flat uniform colour instead (which reads clearly from altitude)
+ * while farmers, pirates and ramblers keep their original texture — an armed
+ * hooded rogue already looks the part on a beach full of cannons.
+ */
 const HUMAN_KINDS = {
-  farmer: { src: 'Barbarian', label: 'Farmer', icon: '🧑‍🌾', points: 150, tint: null },
-  vet: { src: 'Mage', label: 'Vet', icon: '🧑‍⚕️', points: 200, tint: 0xf2f6f7 },
-  doctor: { src: 'Knight', label: 'Doctor', icon: '👨‍⚕️', points: 220, tint: 0xf6fbfc },
-  nurse: { src: 'Mage', label: 'Nurse', icon: '👩‍⚕️', points: 180, tint: 0xeaf6ff },
-  patient: { src: 'Rogue', label: 'Patient', icon: '🤒', points: 160, tint: 0xbfe7d8 },
-  pirate: { src: 'Rogue_Hooded', label: 'Pirate', icon: '🏴‍☠️', points: 240, tint: 0x6b5a48 },
-  captain: { src: 'Knight', label: 'Pirate Captain', icon: '🦜', points: 400, tint: 0x7a2b2b },
-  rambler: { src: 'Ranger', label: 'Rambler', icon: '🥾', points: 170, tint: null },
+  farmer: { src: 'Barbarian', label: 'Farmer', icon: '🧑‍🌾', points: 150 },
+  rambler: { src: 'Ranger', label: 'Rambler', icon: '🥾', points: 170 },
+  pirate: { src: 'Rogue_Hooded', label: 'Pirate', icon: '🏴‍☠️', points: 240 },
+  captain: { src: 'Knight', label: 'Pirate Captain', icon: '🦜', points: 400 },
+  vet: { src: 'Mage', label: 'Vet', icon: '🧑‍⚕️', points: 200, uniform: 0x8fd4e8 },
+  doctor: { src: 'Knight', label: 'Doctor', icon: '👨‍⚕️', points: 220, uniform: 0xf7fbfc },
+  nurse: { src: 'Mage', label: 'Nurse', icon: '👩‍⚕️', points: 180, uniform: 0xe4f2fb },
+  patient: { src: 'Rogue', label: 'Patient', icon: '🤒', points: 160, uniform: 0xa8dcc4 },
 }
 
 export class HumanEntity extends Abductable {
@@ -231,18 +262,14 @@ export class HumanEntity extends Abductable {
     const g = HumanEntity._sources.get(spec.src)
     const model = skeletonClone(g)
     fitToHeight(model, 1.85)   // an actual person, not a giant
-    // Tint the whole outfit — the packs have no medical or pirate skins, so
-    // colour is what separates a doctor from a deckhand.
-    if (spec.tint) {
+    if (spec.uniform) {
+      // Replace, don't tint: the source material carries a texture, and
+      // multiplying a colour through it only ever darkens. One shared
+      // material per uniform colour keeps this to a single draw call.
+      const flat = HumanEntity._uniformMat(spec.uniform)
       model.traverse((o) => {
         if (!o.isMesh) return
-        const mats = Array.isArray(o.material) ? o.material : [o.material]
-        o.material = mats.map((m) => {
-          const nm = m.clone()
-          nm.color = new THREE.Color(spec.tint)
-          return nm
-        })
-        if (!Array.isArray(o.material)) o.material = o.material[0]
+        o.material = Array.isArray(o.material) ? o.material.map(() => flat) : flat
       })
     }
     const root = new THREE.Group()
@@ -268,6 +295,16 @@ export class HumanEntity extends Abductable {
     this.current = null
     this._play('idle')
     this.root.position.set(x, 0, z)
+  }
+
+  static _uniforms = new Map()
+  static _uniformMat(hex) {
+    let m = HumanEntity._uniforms.get(hex)
+    if (!m) {
+      m = new THREE.MeshStandardMaterial({ color: new THREE.Color(hex), roughness: 0.8, metalness: 0 })
+      HumanEntity._uniforms.set(hex, m)
+    }
+    return m
   }
 
   static _sources = new Map()

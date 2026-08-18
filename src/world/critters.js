@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 
 /**
  * Procedural farm animals.
@@ -12,8 +13,22 @@ import * as THREE from 'three'
  * Everything is flat-shaded to sit alongside the Kenney/Quaternius kits.
  */
 
-const mat = (color, opts = {}) =>
-  new THREE.MeshStandardMaterial({ color, flatShading: true, roughness: 0.85, metalness: 0, ...opts })
+/*
+ * Colour is baked into vertices rather than carried by per-part materials.
+ * A cow is about thirty primitives; as separate meshes that is thirty draw
+ * calls each, and there are well over a hundred animals in the world. Merging
+ * each animated group into one vertex-coloured mesh takes a critter from ~30
+ * draw calls to 7, and every critter in the game shares one material.
+ */
+let SHARED_MAT = null
+function sharedMaterial() {
+  if (!SHARED_MAT) {
+    SHARED_MAT = new THREE.MeshStandardMaterial({
+      vertexColors: true, flatShading: true, roughness: 0.85, metalness: 0,
+    })
+  }
+  return SHARED_MAT
+}
 
 // Shared geometry — one allocation per shape, reused across every critter.
 const G = {
@@ -24,14 +39,44 @@ const G = {
   cyl: new THREE.CylinderGeometry(0.5, 0.5, 1, 7),
 }
 
-function part(geo, material, { pos = [0, 0, 0], scale = [1, 1, 1], rot = [0, 0, 0] } = {}) {
-  const m = new THREE.Mesh(geo, material)
-  m.position.set(...pos)
-  m.scale.set(...scale)
-  m.rotation.set(...rot)
-  m.castShadow = true
-  m.receiveShadow = true
-  return m
+/** Collects coloured primitives for one animated group, then merges them. */
+class PartBin {
+  constructor() { this.geoms = [] }
+
+  add(geo, colorHex, { pos = [0, 0, 0], scale = [1, 1, 1], rot = [0, 0, 0] } = {}) {
+    const g = geo.clone()
+    const m = new THREE.Matrix4().compose(
+      new THREE.Vector3(...pos),
+      new THREE.Quaternion().setFromEuler(new THREE.Euler(...rot)),
+      new THREE.Vector3(...scale),
+    )
+    g.applyMatrix4(m)
+    for (const name of Object.keys(g.attributes)) {
+      if (!['position', 'normal'].includes(name)) g.deleteAttribute(name)
+    }
+    if (!g.attributes.normal) g.computeVertexNormals()
+    const n = g.attributes.position.count
+    const c = new THREE.Color(colorHex)
+    const arr = new Float32Array(n * 3)
+    for (let i = 0; i < n; i++) { arr[i * 3] = c.r; arr[i * 3 + 1] = c.g; arr[i * 3 + 2] = c.b }
+    g.setAttribute('color', new THREE.BufferAttribute(arr, 3))
+    this.geoms.push(g)
+    return this
+  }
+
+  /** Merge into a single mesh and attach it to `parent`. */
+  flush(parent) {
+    if (!this.geoms.length) return null
+    const merged = this.geoms.length === 1 ? this.geoms[0] : mergeGeometries(this.geoms, false)
+    if (!merged) return null
+    const mesh = new THREE.Mesh(merged, sharedMaterial())
+    mesh.castShadow = true
+    mesh.receiveShadow = true
+    parent.add(mesh)
+    if (this.geoms.length > 1) for (const g of this.geoms) g.dispose()
+    this.geoms = []
+    return mesh
+  }
 }
 
 /* ── species definitions ──────────────────────────────────────────────
@@ -85,13 +130,18 @@ export function makeCritter(kind, rng) {
 
   const s = def.size * (rng ? rng.range(0.9, 1.12) : 1)
   const root = new THREE.Group()
-  const bodyMat = mat(def.body)
-  const patchMat = mat(def.patch)
-  const snoutMat = mat(def.snout)
-  const hornMat = def.horn ? mat(def.horn) : null
-  const legMat = mat(def.legColor ?? def.patch)
-  const eyeWhite = mat(0xffffff)
-  const eyeBlack = mat(0x1a1a22)
+  const bodyMat = def.body
+  const patchMat = def.patch
+  const snoutMat = def.snout
+  const hornMat = def.horn || null
+  const legMat = def.legColor ?? def.patch
+  const eyeWhite = 0xffffff
+  const eyeBlack = 0x1a1a22
+
+  // One bin per animated group: the torso, the head, each leg, the tail.
+  const bodyBin = new PartBin()
+  const headBin = new PartBin()
+  const tailBin = new PartBin()
 
   const bodyLen = 1.5 * s
   const bodyH = 0.85 * s
@@ -100,23 +150,22 @@ export function makeCritter(kind, rng) {
   const standH = legLen + bodyH * 0.5
 
   /* ── torso ───────────────────────────────────────────────────── */
-  const torso = part(def.fluffy ? G.sphere : G.capsule, bodyMat, {
+  bodyBin.add(def.fluffy ? G.sphere : G.capsule, bodyMat, {
     pos: [0, standH, 0],
     scale: def.fluffy
       ? [bodyW * 1.5, bodyH * 1.45, bodyLen * 1.05]
       : [bodyW, bodyLen * 0.62, bodyW],
     rot: def.fluffy ? [0, 0, 0] : [Math.PI / 2, 0, 0],
   })
-  root.add(torso)
 
   // Woolly sheep get a few extra lumps so the silhouette reads as fleece.
   if (def.fluffy) {
     for (let i = 0; i < 7; i++) {
       const a = (i / 7) * Math.PI * 2
-      root.add(part(G.sphere, bodyMat, {
+      bodyBin.add(G.sphere, bodyMat, {
         pos: [Math.cos(a) * bodyW * 0.52, standH + Math.sin(a * 2) * 0.14 * s, Math.sin(a) * bodyLen * 0.4],
         scale: [0.52 * s, 0.5 * s, 0.52 * s],
-      }))
+      })
     }
   }
 
@@ -125,10 +174,10 @@ export function makeCritter(kind, rng) {
     const a = (rng ? rng.range(0, Math.PI * 2) : Math.random() * 6.28)
     const t = (rng ? rng.range(-0.42, 0.42) : Math.random() - 0.5)
     const r = bodyW * 0.5
-    root.add(part(G.sphere, patchMat, {
+    bodyBin.add(G.sphere, patchMat, {
       pos: [Math.cos(a) * r * 0.98, standH + Math.sin(a) * bodyH * 0.44, t * bodyLen],
       scale: [0.36 * s, 0.3 * s, 0.42 * s],
-    }))
+    })
   }
 
   /* ── head (its own group so it can turn and bob) ─────────────── */
@@ -137,67 +186,67 @@ export function makeCritter(kind, rng) {
   root.add(head)
 
   const headSize = (def.bird ? 0.34 : 0.56) * s
-  head.add(part(G.box, bodyMat, {
+  headBin.add(G.box, bodyMat, {
     pos: [0, headSize * 0.2, 0],
     scale: [headSize, headSize * 0.92, headSize * 1.05],
-  }))
+  })
 
   // Muzzle / beak
   if (def.bird) {
-    head.add(part(G.cone, snoutMat, {
+    headBin.add(G.cone, snoutMat, {
       pos: [0, headSize * 0.16, headSize * 0.62],
       scale: [headSize * 0.42, headSize * 0.6, headSize * 0.42],
       rot: [Math.PI / 2, 0, 0],
-    }))
-    head.add(part(G.box, mat(def.horn), { // comb
+    })
+    headBin.add(G.box, def.horn, { // comb
       pos: [0, headSize * 0.78, 0], scale: [headSize * 0.14, headSize * 0.34, headSize * 0.62],
-    }))
+    })
   } else {
-    head.add(part(G.box, snoutMat, {
+    headBin.add(G.box, snoutMat, {
       pos: [0, headSize * 0.02, headSize * 0.6],
       scale: [headSize * 0.78, headSize * 0.56, headSize * 0.42],
-    }))
+    })
     // nostrils
     for (const sx of [-1, 1]) {
-      head.add(part(G.sphere, mat(0x000000), {
+      headBin.add(G.sphere, 0x000000, {
         pos: [sx * headSize * 0.17, headSize * 0.02, headSize * 0.79],
         scale: [headSize * 0.13, headSize * 0.16, headSize * 0.06],
-      }))
+      })
     }
   }
 
   // Eyes — oversized and forward-facing. Reads as friendly, not livestock.
   for (const sx of [-1, 1]) {
-    head.add(part(G.sphere, eyeWhite, {
+    headBin.add(G.sphere, eyeWhite, {
       pos: [sx * headSize * 0.3, headSize * 0.42, headSize * 0.42],
       scale: [headSize * 0.3, headSize * 0.34, headSize * 0.24],
-    }))
-    head.add(part(G.sphere, eyeBlack, {
+    })
+    headBin.add(G.sphere, eyeBlack, {
       pos: [sx * headSize * 0.32, headSize * 0.43, headSize * 0.52],
       scale: [headSize * 0.16, headSize * 0.2, headSize * 0.14],
-    }))
+    })
   }
 
   // Ears
   if (!def.bird) {
     for (const sx of [-1, 1]) {
       const floppy = def.ears === 'floppy'
-      head.add(part(G.box, floppy ? snoutMat : bodyMat, {
+      headBin.add(G.box, floppy ? snoutMat : bodyMat, {
         pos: [sx * headSize * 0.56, headSize * (floppy ? 0.44 : 0.5), floppy ? headSize * 0.2 : 0],
         scale: [headSize * 0.34, headSize * (floppy ? 0.42 : 0.2), headSize * 0.16],
         rot: [0, 0, sx * (floppy ? -0.7 : -0.35)],
-      }))
+      })
     }
   }
 
   // Horns
   if (def.hasHorns && hornMat) {
     for (const sx of [-1, 1]) {
-      head.add(part(G.cone, hornMat, {
+      headBin.add(G.cone, hornMat, {
         pos: [sx * headSize * 0.4, headSize * 0.72, -headSize * 0.05],
         scale: [headSize * 0.2, headSize * 0.5, headSize * 0.2],
         rot: [0, 0, sx * 0.6],
-      }))
+      })
     }
   }
 
@@ -212,16 +261,18 @@ export function makeCritter(kind, rng) {
       ? [p[0] * s, 0]
       : [p[0] * bodyW * 0.36, p[1] * bodyLen * 0.34]
     const hip = new THREE.Group()
+    const legBin = new PartBin()
     hip.position.set(lx, standH - bodyH * 0.34, lz)
-    hip.add(part(G.box, legMat, {
+    legBin.add(G.box, legMat, {
       pos: [0, -legLen / 2, 0],
       scale: [(def.bird ? 0.1 : 0.2) * s, legLen, (def.bird ? 0.1 : 0.2) * s],
-    }))
+    })
     if (!def.bird) {
-      hip.add(part(G.box, mat(0x2e2b33), { // hoof
+      legBin.add(G.box, 0x2e2b33, { // hoof
         pos: [0, -legLen + 0.05 * s, 0], scale: [0.23 * s, 0.14 * s, 0.23 * s],
-      }))
+      })
     }
+    legBin.flush(hip)
     root.add(hip)
     legs.push(hip)
   }
@@ -231,21 +282,25 @@ export function makeCritter(kind, rng) {
   tail.position.set(0, standH + bodyH * 0.18, -bodyLen * 0.52)
   root.add(tail)
   if (def.tail === 'curly') {
-    tail.add(part(G.cyl, snoutMat, { pos: [0, 0, -0.1 * s], scale: [0.1 * s, 0.3 * s, 0.1 * s], rot: [1.1, 0, 0.6] }))
+    tailBin.add(G.cyl, snoutMat, { pos: [0, 0, -0.1 * s], scale: [0.1 * s, 0.3 * s, 0.1 * s], rot: [1.1, 0, 0.6] })
   } else if (def.bird) {
-    tail.add(part(G.box, bodyMat, { pos: [0, 0.1 * s, -0.16 * s], scale: [0.3 * s, 0.3 * s, 0.14 * s], rot: [0.5, 0, 0] }))
+    tailBin.add(G.box, bodyMat, { pos: [0, 0.1 * s, -0.16 * s], scale: [0.3 * s, 0.3 * s, 0.14 * s], rot: [0.5, 0, 0] })
   } else {
-    tail.add(part(G.box, bodyMat, { pos: [0, -0.22 * s, 0], scale: [0.09 * s, 0.55 * s, 0.09 * s] }))
-    tail.add(part(G.sphere, patchMat, { pos: [0, -0.52 * s, 0], scale: [0.19 * s, 0.24 * s, 0.19 * s] }))
+    tailBin.add(G.box, bodyMat, { pos: [0, -0.22 * s, 0], scale: [0.09 * s, 0.55 * s, 0.09 * s] })
+    tailBin.add(G.sphere, patchMat, { pos: [0, -0.52 * s, 0], scale: [0.19 * s, 0.24 * s, 0.19 * s] })
   }
 
   /* ── udder ───────────────────────────────────────────────────── */
   if (def.hasUdder) {
-    root.add(part(G.sphere, snoutMat, {
+    bodyBin.add(G.sphere, snoutMat, {
       pos: [0, standH - bodyH * 0.44, -bodyLen * 0.06],
       scale: [0.4 * s, 0.32 * s, 0.4 * s],
-    }))
+    })
   }
+
+  bodyBin.flush(root)
+  headBin.flush(head)
+  tailBin.flush(tail)
 
   root.userData.standHeight = standH
   root.userData.radius = Math.max(bodyW, bodyLen * 0.5) * 0.6

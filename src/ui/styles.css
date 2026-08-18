@@ -167,8 +167,7 @@ html, body {
 .combo-fuse { position: absolute; left: 0; bottom: 0; height: 4px; width: 100%; background: rgba(255,255,255,.15); }
 .combo-fuse b { display: block; height: 100%; width: 100%; background: var(--melon); }
 
-.hud-cargo { position: absolute; top: max(58px, calc(env(safe-area-inset-top) + 48px)); left: 50%; transform: translateX(-50%); text-align: center; }
-.cargo-label { font-size: 10px; letter-spacing: .2em; opacity: .5; margin-bottom: 4px; font-weight: 800; }
+.hud-cargo { position: absolute; top: max(62px, calc(env(safe-area-inset-top) + 52px)); left: 50%; transform: translateX(-50%); text-align: center; }
 .cargo-slots { display: flex; gap: 5px; justify-content: center; }
 .cargo-slots i {
   width: clamp(20px, 4.4vmin, 30px); height: clamp(20px, 4.4vmin, 30px);
@@ -287,3 +286,43 @@ html, body {
   :root { --stick-size: clamp(96px, 30vh, 140px); --pad-size: clamp(46px, 15vh, 66px); --cluster: clamp(120px, 38vh, 180px); }
   .hud-cargo { display: none; }
 }
+
+/* ── minimap ────────────────────────────────────────────────────── */
+.minimap {
+  position: absolute;
+  left: var(--pad);
+  top: max(10px, env(safe-area-inset-top));
+  pointer-events: none;
+  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, .45));
+}
+@media (max-height: 460px) { .minimap { width: 96px !important; height: 96px !important; } }
+
+/* ── rank badge ─────────────────────────────────────────────────── */
+.rank {
+  position: absolute;
+  left: 50%; transform: translateX(-50%);
+  bottom: calc(var(--pad-b) + 4px);
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 18px;
+  background: rgba(11, 16, 38, .68);
+  border: 2px solid rgba(255, 210, 63, .35);
+  border-radius: 999px;
+  backdrop-filter: blur(6px);
+  pointer-events: none;
+  white-space: nowrap;
+}
+.rank b { font-size: clamp(11px, 2.4vmin, 15px); color: var(--sun); letter-spacing: .04em; }
+.rank i {
+  font-style: normal;
+  display: block; width: clamp(52px, 14vmin, 96px); height: 6px;
+  background: rgba(255, 255, 255, .16); border-radius: 999px; overflow: hidden;
+}
+.rank i u { display: block; height: 100%; width: 0; background: var(--sun); border-radius: 999px;
+  transition: width .4s ease; }
+.rank.up { animation: rankpop .7s ease; }
+@keyframes rankpop {
+  0% { transform: translateX(-50%) scale(1); }
+  35% { transform: translateX(-50%) scale(1.22); border-color: var(--sun); }
+  100% { transform: translateX(-50%) scale(1); }
+}
+@media (max-height: 460px) { .rank { display: none; } }
