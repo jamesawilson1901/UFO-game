@@ -26,11 +26,9 @@ jobs:
       - run: npm ci
       # The repo may be served from /<repo>/, so Vite needs the matching base.
       - run: npm run build -- --base="/${GITHUB_REPOSITORY#*/}/"
-      # enablement turns Pages on for the repo if it isn't already, so the
-      # first run doesn't need anyone to click through repository settings.
+      # Pages must already be enabled with "GitHub Actions" as the source;
+      # the workflow token is not allowed to create the site itself.
       - uses: actions/configure-pages@v5
-        with:
-          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
