@@ -12,6 +12,7 @@ import { CritterEntity, HumanEntity, PropEntity, LOOT, STATE } from './entities.
 import { Hud } from '../ui/hud.js'
 import { Minimap } from '../ui/minimap.js'
 import { rankFor } from './ranks.js'
+import { pickEvent, quipFor, COMBO_SHOUTS } from './events.js'
 
 const SFX = {
   beam: 'forceField_002', beamStart: 'forceField_000',
@@ -146,6 +147,10 @@ export class Game {
     this.dropped = []
     this.nextRivalAt = 32 + Math.random() * 18
     this.ended = false
+    this.pointsMultiplier = 1
+    this.multiplierUntil = 0
+    this.nextEventAt = 24 + Math.random() * 12
+    this.lastEventId = null
 
     this.hud.setScore(0)
     this.hud.setCargo([])
@@ -165,6 +170,10 @@ export class Game {
     if (!this.scene) return
     const seen = new Set()
     this.scene.traverse((o) => {
+      if (o.isSkinnedMesh && o.skeleton) {
+        o.skeleton.boneTexture?.dispose()
+        o.skeleton.boneTexture = null
+      }
       if (!(o.isMesh || o.isInstancedMesh || o.isPoints)) return
       if (o.geometry && !o.geometry.userData.shared && !seen.has(o.geometry)) {
         seen.add(o.geometry)
@@ -177,6 +186,7 @@ export class Game {
         m.dispose()
       }
     })
+    this.sun?.shadow?.map?.dispose()
     this.entities = []
     this.dropped = []
     this.scene = null
@@ -240,7 +250,7 @@ export class Game {
       const g = await assets.glb(def.path)
       if (!g) continue
       this._propScenes.set(name, g.scene)
-      const n = def.points > 200 ? 8 : 16
+      const n = def.points > 200 ? 12 : 24
       for (let i = 0; i < n; i++) {
         const s = spot()
         if (!s) continue
@@ -252,6 +262,13 @@ export class Game {
         }), { type: 'prop', name })
       }
     }
+  }
+
+  /** Spawn a critter at a specific spot — used by the random events. */
+  spawnCritterAt(kind, x, z, { golden = false } = {}) {
+    if (!this.scene) return null
+    const e = new CritterEntity(kind, x, z, this.rng, { golden })
+    return this._add(e, { type: 'critter', kind, golden })
   }
 
   _add(e, spec = null) {
@@ -437,6 +454,7 @@ export class Game {
 
     this._fireLasers(dt)
     this._updateRival(dt)
+    this._updateEvents(dt)
 
     /* ── entities ───────────────────────────────────────────────── */
     const ctx = { world, ufo, t: this.t, audio }
@@ -461,6 +479,26 @@ export class Game {
     this.poofs.update(dt)
     this._camera(dt)
     this.minimap.draw(ufo, dt, this.rival)
+  }
+
+  /* ══ random events ═══════════════════════════════════════════════ */
+
+  _updateEvents(dt) {
+    if (this.pointsMultiplier > 1 && this.t > this.multiplierUntil) {
+      this.pointsMultiplier = 1
+      this.hud.setAlert('')
+    }
+    if (this.ended || this.t < this.nextEventAt) return
+    // Leave the last stretch clear so the finish isn't chaos.
+    if (this.timeLeft < 25) { this.nextEventAt = 1e9; return }
+    const ev = pickEvent(this.rng, this.lastEventId)
+    this.lastEventId = ev.id
+    this.nextEventAt = this.t + 34 + this.rng() * 16
+    this.hud.toast(ev.banner, ev.color)
+    audio.play(SFX.deposit, { volume: 0.7, rate: 1.2 })
+    this.shake = Math.max(this.shake, 0.5)
+    ev.run(this)
+    if (ev.id === 'double') this.hud.setAlert('⭐ DOUBLE POINTS ⭐')
   }
 
   /* ══ lasers ══════════════════════════════════════════════════════ */
@@ -641,7 +679,7 @@ export class Game {
     e.state = STATE.DONE
     e.root.visible = false
 
-    const mult = this.combo
+    const mult = this.combo * this.pointsMultiplier
     const gained = Math.round(e.points * mult)
     this.score += gained
     this.stats.abducted++
@@ -668,6 +706,15 @@ export class Game {
 
     this._popupAt(this.ufo.pos, `+${gained.toLocaleString()}`)
     this._popupAt(this.ufo.pos, `${e.icon} ${e.label}${mult > 1 ? `  x${mult}` : ''}`, true, 36)
+    // A daft caption every few pickups: constant chatter stops being funny.
+    if (Math.random() < 0.35) this.hud.toast(quipFor(e.label), 0xfff6e5)
+    const shout = COMBO_SHOUTS[this.combo]
+    if (shout && this.combo !== this._lastShout) {
+      this._lastShout = this.combo
+      this.hud.toast(shout, 0xffd23f)
+      this.burst(this.ufo.pos.clone(), 0xffd23f, 30, 10)
+    }
+    if (this.combo <= 1) this._lastShout = 0
 
     const i = this.dropped.indexOf(e)
     if (i >= 0) this.dropped.splice(i, 1)

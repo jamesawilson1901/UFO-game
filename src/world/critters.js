@@ -26,6 +26,8 @@ function sharedMaterial() {
     SHARED_MAT = new THREE.MeshStandardMaterial({
       vertexColors: true, flatShading: true, roughness: 0.85, metalness: 0,
     })
+    // Lives for the whole session; end-of-round teardown must not free it.
+    SHARED_MAT.userData.shared = true
   }
   return SHARED_MAT
 }

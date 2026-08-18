@@ -132,7 +132,7 @@ export const THEMES = [
     music: 'assets/audio/music/pirate.ogg',
     water: { level: -2.5, color: 0x2f8fbf },
     bay: { x: -70, z: 80, radius: 130, depth: 16 },
-    critters: { chicken: 16, pig: 10, cow: 8, sheep: 6 },
+    critters: { chicken: 22, pig: 16, cow: 14, sheep: 12, calf: 8 },
     npcs: ['pirate', 'pirate', 'pirate', 'captain'],
     npcCount: 20,
     loot: ['chest', 'barrel', 'cannonball', 'pizza', 'turkey', 'bottle'],
@@ -215,16 +215,16 @@ export const THEMES = [
     sun: { color: 0xfff7ea, intensity: 2.4 },
     hemi: { sky: 0xe4f2ff, ground: 0x6d7d5e, intensity: 1.4 },
     music: 'assets/audio/music/medical.ogg',
-    critters: { cow: 12, chicken: 10, pig: 6, sheep: 6 },
+    critters: { cow: 24, chicken: 20, pig: 14, sheep: 14, calf: 10 },
     npcs: ['doctor', 'nurse', 'nurse', 'patient', 'patient', 'patient', 'vet'],
-    npcCount: 30,
+    npcCount: 46,
     loot: ['pizza', 'burger', 'donut', 'icecream', 'cake', 'portaloo'],
     models: [
       ...GRASS, ...FLOWERS, N('tree_small'), N('tree_default'),
       T('wall'), T('wall-door'), T('wall-window-glass'), T('wall-window-small'),
       T('wall-corner'), T('roof-flat'), T('road'), T('lantern'), T('hedge'),
       T('fountain-round'), T('fountain-round-detail'), T('cart'), T('cart-high'),
-      T('bench') || T('stall-bench'), T('stall'),
+      T('stall-bench'), T('stall'), ...ROCKS_SMALL,
     ],
     extraModels: ['potty'],
 
@@ -287,7 +287,9 @@ export const THEMES = [
         w.put(b, 'med:cross', i * 5, 26, { width: 5 })
         w.put(b, 'med:cross', 0, 26 + i * 5, { width: 5 })
       }
-      for (let i = 0; i < 34; i++) w.put(b, T('road'), -84 + i * 5, 54, { width: 5 })
+      /* A long straight run of flat tiles staircases over the undulating
+         terrain and reads as scattered debris, so the forecourt cross is the
+         only paving; the approach is marked with lamps instead. */
       w.put(b, 'amb:cart:w', -20, 44, { height: 3, rotY: 0.2 })
       w.put(b, 'amb:cart-high:w', 16, 44, { height: 3.4, rotY: -0.3 })
       w.put(b, 'amb:cart:r', 52, 54, { height: 3, rotY: 1.6 })
@@ -314,32 +316,38 @@ export const THEMES = [
         { height: 3, rotY: -0.2 })
       w.mark('The Portaloo Row', 90, -28, 'joke')
 
-      w.scatter(b, [N('tree_small'), N('tree_default')], 0, 0, WORLD_HALF - 25, 90,
-        { height: 8, jitter: 0.25, minR: 110 })
-      w.scatter(b, GRASS, 0, 0, WORLD_HALF - 20, 600, { height: 0.9, jitter: 0.4 })
-      w.scatter(b, FLOWERS, 0, 0, WORLD_HALF - 20, 260, { height: 0.8, jitter: 0.3 })
+      w.scatter(b, [N('tree_small'), N('tree_default')], 0, 0, WORLD_HALF - 25, 190,
+        { height: 8, jitter: 0.3, minR: 96 })
+      w.scatter(b, [T('lantern')], 0, 0, WORLD_HALF - 30, 70, { height: 4.2, minR: 100 })
+      w.scatter(b, [T('hedge')], 0, 0, WORLD_HALF - 25, 90, { width: 3, minR: 100 })
+      w.scatter(b, [T('stall'), T('cart')], 0, 0, WORLD_HALF - 40, 40, { height: 3, minR: 96 })
+      w.scatter(b, GRASS, 0, 0, WORLD_HALF - 20, 1100, { height: 1.0, jitter: 0.4 })
+      w.scatter(b, FLOWERS, 0, 0, WORLD_HALF - 20, 520, { height: 0.9, jitter: 0.3 })
+      w.scatter(b, ROCKS_SMALL, 0, 0, WORLD_HALF - 20, 110, { height: 0.6, jitter: 0.5, tilt: 0.12 })
     },
   },
 
   /* ══════════════════════════════════════════════════════════════════
-     SPOOKY — dark, foggy, green-lit. Skeletons instead of farmers.
+     SPOOKY — dark but never grim. Everything cheerful from the nature kit
+     is repainted; bright autumn trees in a graveyard read as a park.
      ═════════════════════════════════════════════════════════════════ */
   {
     id: 'spooky',
     name: 'Boo Hill Graveyard',
     icon: '👻',
     blurb: 'Spooky! Beam up the skeletons.',
-    ground: 0x4a5545,
-    sand: 0x5a5a50,
-    rock: 0x6b6b66,
+    ground: 0x3f4a3e,
+    sand: 0x4c4a44,
+    rock: 0x5e5e5a,
     sky: null,
-    skyColor: 0x2a2340,
-    fog: { color: 0x3b3556, near: 110, far: 330 },
-    sun: { color: 0x9fd8ff, intensity: 1.1 },
-    hemi: { sky: 0x6f5ea8, ground: 0x2a3326, intensity: 1.0 },
-    ambient: 0.55,
+    skyColor: 0x241f3a,
+    fog: { color: 0x2f2a4a, near: 150, far: 380 },
+    sun: { color: 0xb8d8ff, intensity: 1.35 },
+    hemi: { sky: 0x8878c8, ground: 0x242a22, intensity: 1.1 },
+    // Lifted so a five-year-old can still tell a cow from a gravestone.
+    ambient: 0.7,
     music: 'assets/audio/music/wilds.ogg',
-    critters: { cow: 14, sheep: 10, chicken: 12, pig: 8 },
+    critters: { cow: 22, sheep: 16, chicken: 20, pig: 14 },
     npcs: ['skeleton', 'skeleton', 'skeleton', 'skelemage', 'ghoul'],
     npcCount: 30,
     loot: ['pumpkin', 'chest', 'barrel', 'cake', 'skull'],
@@ -347,57 +355,86 @@ export const THEMES = [
       K('tomb-01'), K('tomb-02'), K('tomb-03'), K('iron-fence'), K('iron-gate'),
       K('iron-pillar'), K('skull'), K('bone'), K('candle'), K('candlestick'),
       K('dead-flower'), K('dead-grass'), K('dark-trunk-block'), K('red-leaves-block'),
-      K('stone-table'), K('stone-chair'), K('ritual-book'), K('corrupted-grass-block'),
-      N('tree_default_fall'), N('tree_oak_fall'), N('stump_old'), N('log'),
-      N('mushroom_red'), N('mushroom_redGroup'), N('rock_tallA'), N('rock_largeA'),
-      N('statue_obelisk'), N('statue_head'), N('statue_column'), N('grass_leafs'),
-      N('crop_pumpkin'), N('campfire_stones'), N('campfire_logs'),
+      K('stone-table'), K('stone-chair'), K('ritual-book'),
+      N('tree_thin'), N('tree_tall'), N('tree_default'), N('stump_old'), N('log'),
+      N('mushroom_red'), N('mushroom_redGroup'), N('rock_tallA'), N('stone_tallC'),
+      N('statue_obelisk'), N('statue_head'), N('statue_column'),
+      N('crop_pumpkin'), N('campfire_stones'), N('campfire_logs'), N('grass_leafs'),
     ],
 
     build(w, b) {
       const rng = w.rng
-      // Grave rows — the defining feature, laid out in ranks like a real cemetery.
-      for (let plot = 0; plot < 5; plot++) {
-        const ox = -120 + plot * 60
-        const oz = -60 + (plot % 2) * 70
-        for (let r = 0; r < 5; r++) {
+      /* The nature kit is relentlessly cheerful — spring greens and bright
+         autumn oranges. Repaint the pieces this world borrows so the whole
+         graveyard reads as one place. */
+      const DEAD = {
+        tree_thin: 0x3a3348, tree_tall: 0x322c40, tree_default: 0x2e2a3c,
+        stump_old: 0x4a3f38, log: 0x4a3f38,
+        rock_tallA: 0x585a60, stone_tallC: 0x53555c,
+        statue_obelisk: 0x6a6c74, statue_head: 0x6a6c74, statue_column: 0x64666e,
+        grass_leafs: 0x4a5442, crop_pumpkin: 0xc9701f,
+        mushroom_red: 0x8c3b4a, mushroom_redGroup: 0x8c3b4a,
+      }
+      for (const [name, color] of Object.entries(DEAD)) {
+        const src = w.models.get(N(name))
+        if (src) w.models.set(`dead:${name}`, w.repaint(src.clone(true), color))
+      }
+      const D = (n) => `dead:${n}`
+
+      // Grave plots — the defining feature. Big enough to read from the air.
+      for (let plot = 0; plot < 6; plot++) {
+        const a = (plot / 6) * Math.PI * 2
+        const ox = Math.cos(a) * 105, oz = Math.sin(a) * 105
+        for (let r = 0; r < 4; r++) {
           for (let c = 0; c < 4; c++) {
             w.put(b, rng.pick([K('tomb-01'), K('tomb-02'), K('tomb-03')]),
-              ox + c * 9, oz + r * 9, { height: 2.8, rotY: rng.range(-0.12, 0.12) })
+              ox + (c - 1.5) * 11, oz + (r - 1.5) * 11,
+              { height: 5, rotY: -a + rng.range(-0.12, 0.12) })
           }
         }
-        w.fenceRect(b, K('iron-fence'), ox + 13.5, oz + 18, 48, 52, 4, { height: 2.4 })
-        w.mark('Grave Plot', ox + 13.5, oz + 18, 'zone')
+        w.fenceRect(b, K('iron-fence'), ox, oz, 54, 54, 4.4, { height: 3.4 })
+        for (const [dx, dz] of [[-27, -27], [27, -27], [-27, 27], [27, 27]]) {
+          w.put(b, K('iron-pillar'), ox + dx, oz + dz, { height: 4.6 })
+        }
+        w.mark('Grave Plot', ox, oz, 'zone')
       }
 
-      // A ritual circle, because a seven-year-old will absolutely go there first.
-      w.put(b, K('stone-table'), 0, 40, { height: 2 })
-      w.put(b, K('ritual-book'), 0, 40, { height: 0.5, yOff: 2 })
+      // A ritual circle, because a seven-year-old will go there first.
+      w.put(b, K('stone-table'), 0, 0, { height: 3 })
+      w.put(b, K('ritual-book'), 0, 0, { height: 0.8, yOff: 3 })
       for (let i = 0; i < 8; i++) {
         const a = (i / 8) * Math.PI * 2
-        w.put(b, K('candlestick'), Math.cos(a) * 12, 40 + Math.sin(a) * 12, { height: 2.2 })
-        w.put(b, K('stone-chair'), Math.cos(a) * 20, 40 + Math.sin(a) * 20, { height: 2, rotY: -a })
+        w.put(b, K('candlestick'), Math.cos(a) * 14, Math.sin(a) * 14, { height: 3.2 })
+        w.put(b, K('stone-chair'), Math.cos(a) * 24, Math.sin(a) * 24, { height: 3, rotY: -a })
       }
-      w.put(b, N('statue_obelisk'), 0, 0, { height: 16 })
-      w.mark('The Ritual Circle', 0, 40, 'landmark')
-      w.mark('The Black Obelisk', 0, 0, 'landmark')
+      w.put(b, D('statue_obelisk'), 0, -46, { height: 20 })
+      w.mark('The Ritual Circle', 0, 0, 'landmark')
+      w.mark('The Black Obelisk', 0, -46, 'landmark')
 
-      w.scatter(b, [N('tree_default_fall'), N('tree_oak_fall'), K('dark-trunk-block')],
-        0, 0, WORLD_HALF - 25, 170, { height: 11, jitter: 0.35, tilt: 0.06 })
-      w.scatter(b, [K('red-leaves-block')], 0, 0, WORLD_HALF - 25, 60, { height: 4, jitter: 0.4 })
-      w.scatter(b, [K('skull'), K('bone')], 0, 0, WORLD_HALF - 25, 130, { height: 0.8, tilt: 0.4 })
-      w.scatter(b, [K('candle')], 0, 0, WORLD_HALF - 30, 90, { height: 0.9 })
-      w.scatter(b, [K('dead-flower'), K('dead-grass')], 0, 0, WORLD_HALF - 20, 500,
-        { height: 0.9, jitter: 0.4 })
-      w.scatter(b, [N('mushroom_red'), N('mushroom_redGroup')], 0, 0, WORLD_HALF - 25, 110,
-        { height: 1.4, jitter: 0.4 })
-      w.scatter(b, [N('rock_tallA'), N('rock_largeA'), N('statue_head'), N('statue_column')],
-        0, 0, WORLD_HALF - 25, 90, { height: 3.6, jitter: 0.5, tilt: 0.1 })
-      w.scatter(b, [N('crop_pumpkin')], 0, 0, WORLD_HALF - 30, 80, { height: 1.3, jitter: 0.3 })
-      w.scatter(b, [N('stump_old'), N('log')], 0, 0, WORLD_HALF - 25, 70, { height: 1.6, jitter: 0.3 })
-      for (const [x, z] of [[-90, 110], [100, -100], [60, 120]]) {
-        w.put(b, N('campfire_stones'), x, z, { height: 0.8 })
-        w.put(b, N('campfire_logs'), x, z, { height: 1.4 })
+      w.scatter(b, [D('tree_thin'), D('tree_tall'), D('tree_default'), K('dark-trunk-block')],
+        0, 0, WORLD_HALF - 25, 200, { height: 13, jitter: 0.35, tilt: 0.07 })
+      // red-leaves-block is a voxel canopy piece; scattered on the ground it
+      // just reads as a rug, so it sits on top of the dead trunks instead.
+      for (let i = 0; i < 40; i++) {
+        const spot = w.randomSpot(rng, { radius: WORLD_HALF - 30 })
+        if (!spot) continue
+        w.put(b, K('dark-trunk-block'), spot.x, spot.z, { height: 9 })
+        w.put(b, K('red-leaves-block'), spot.x, spot.z, { height: 5, yOff: 8 })
+      }
+      w.scatter(b, [K('skull'), K('bone')], 0, 0, WORLD_HALF - 25, 150, { height: 1.2, tilt: 0.4 })
+      w.scatter(b, [K('candle')], 0, 0, WORLD_HALF - 30, 110, { height: 1.3 })
+      w.scatter(b, [K('dead-flower'), K('dead-grass')], 0, 0, WORLD_HALF - 20, 600,
+        { height: 1.1, jitter: 0.4 })
+      w.scatter(b, [D('mushroom_red'), D('mushroom_redGroup')], 0, 0, WORLD_HALF - 25, 120,
+        { height: 1.8, jitter: 0.4 })
+      w.scatter(b, [D('rock_tallA'), D('stone_tallC'), D('statue_head'), D('statue_column')],
+        0, 0, WORLD_HALF - 25, 110, { height: 4.4, jitter: 0.5, tilt: 0.1 })
+      w.scatter(b, [D('crop_pumpkin')], 0, 0, WORLD_HALF - 30, 100, { height: 1.8, jitter: 0.3 })
+      w.scatter(b, [D('stump_old'), D('log')], 0, 0, WORLD_HALF - 25, 80, { height: 2, jitter: 0.3 })
+      w.scatter(b, [D('grass_leafs')], 0, 0, WORLD_HALF - 20, 400, { height: 1.1, jitter: 0.4 })
+      for (const [x, z] of [[-90, 110], [100, -100], [60, 130], [-120, -60]]) {
+        w.put(b, N('campfire_stones'), x, z, { height: 1.1 })
+        w.put(b, N('campfire_logs'), x, z, { height: 1.9 })
       }
     },
   },
@@ -418,7 +455,7 @@ export const THEMES = [
     sun: { color: 0xfff4e0, intensity: 2.2 },
     hemi: { sky: 0xdceeff, ground: 0x8fa2b0, intensity: 1.25 },
     music: 'assets/audio/music/wilds.ogg',
-    critters: { sheep: 20, cow: 14, calf: 10, chicken: 12, pig: 8 },
+    critters: { sheep: 24, cow: 20, calf: 14, chicken: 16, pig: 12 },
     npcs: ['elf', 'elf', 'rambler', 'santa'],
     npcCount: 18,
     loot: ['present', 'present', 'cake', 'donut', 'icecream', 'snowman'],
@@ -505,7 +542,7 @@ export const THEMES = [
     sun: { color: 0xfff0d8, intensity: 2.5 },
     hemi: { sky: 0xd4e8ff, ground: 0x5f6f42, intensity: 1.35 },
     music: 'assets/audio/music/pirate.ogg',
-    critters: { cow: 22, sheep: 16, pig: 10, chicken: 14, bull: 4 },
+    critters: { cow: 28, sheep: 20, pig: 14, chicken: 18, bull: 5 },
     npcs: ['knight', 'knight', 'archer', 'wizard', 'farmer'],
     npcCount: 26,
     loot: ['chest', 'barrel', 'turkey', 'cake', 'cannonball', 'pizza'],
@@ -594,7 +631,7 @@ export const THEMES = [
     music: 'assets/audio/music/wilds.ogg',
     water: { level: -2.5, color: 0x2f9fa8 },
     bay: { x: 96, z: -100, radius: 110, depth: 14 },
-    critters: { pig: 18, chicken: 20, cow: 12, sheep: 10, calf: 8 },
+    critters: { pig: 22, chicken: 24, cow: 18, sheep: 14, calf: 10 },
     npcs: ['explorer', 'explorer', 'rambler', 'vet'],
     npcCount: 18,
     loot: ['barrel', 'chest', 'watermelon', 'turkey', 'pizza', 'fish'],

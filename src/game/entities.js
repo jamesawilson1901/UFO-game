@@ -182,7 +182,21 @@ export class Abductable {
   }
 
   animate() {}
-  dispose() { this.root.parent?.remove(this.root) }
+
+  /**
+   * Every skinned clone carries its own Skeleton, and a Skeleton allocates a
+   * bone texture on the GPU. Nothing else frees them, so with NPCs respawning
+   * all round they accumulate steadily — a few hundred per world.
+   */
+  dispose() {
+    this.root.traverse?.((o) => {
+      if (o.isSkinnedMesh && o.skeleton) {
+        o.skeleton.boneTexture?.dispose()
+        o.skeleton.boneTexture = null
+      }
+    })
+    this.root.parent?.remove(this.root)
+  }
 }
 
 /* ══ farm animals ══════════════════════════════════════════════════ */
@@ -219,6 +233,7 @@ export class CritterEntity extends Abductable {
         color: 0xffd23f, emissive: 0x6b4a00, emissiveIntensity: 0.55,
         metalness: 0.35, roughness: 0.3, flatShading: true, vertexColors: false,
       })
+      CritterEntity._gold.userData.shared = true
     }
     return CritterEntity._gold
   }
@@ -333,6 +348,7 @@ export class HumanEntity extends Abductable {
     let m = HumanEntity._uniforms.get(hex)
     if (!m) {
       m = new THREE.MeshStandardMaterial({ color: new THREE.Color(hex), roughness: 0.8, metalness: 0 })
+      m.userData.shared = true          // reused by every later round
       HumanEntity._uniforms.set(hex, m)
     }
     return m
