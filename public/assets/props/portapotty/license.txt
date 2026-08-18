@@ -1,0 +1,11 @@
+Model Information:
+* title:	Porta Potty (Low Poly Style)
+* source:	https://sketchfab.com/3d-models/porta-potty-low-poly-style-d105f73bacae47d1b3b23a00fe8f4629
+* author:	Tiko (https://sketchfab.com/tikoavp)
+
+Model License:
+* license type:	CC-BY-SA-4.0 (http://creativecommons.org/licenses/by-sa/4.0/)
+* requirements:	Author must be credited. Modified versions must have the same license. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Porta Potty (Low Poly Style)" (https://sketchfab.com/3d-models/porta-potty-low-poly-style-d105f73bacae47d1b3b23a00fe8f4629) by Tiko (https://sketchfab.com/tikoavp) licensed under CC-BY-SA-4.0 (http://creativecommons.org/licenses/by-sa/4.0/)

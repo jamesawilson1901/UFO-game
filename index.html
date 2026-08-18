@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover" />
+<meta name="theme-color" content="#0b1026" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<title>Cosmic Cow Caper</title>
+<link rel="stylesheet" href="./src/ui/styles.css" />
+</head>
+<body>
+  <canvas id="stage"></canvas>
+
+  <!-- ══ loading ══ -->
+  <div id="boot" class="screen">
+    <div class="boot-inner">
+      <div class="boot-ufo" aria-hidden="true">
+        <div class="boot-dome"></div>
+        <div class="boot-hull"></div>
+        <div class="boot-beam"></div>
+      </div>
+      <h1 class="title">Cosmic&nbsp;Cow<br /><span>Caper</span></h1>
+      <div class="bar"><i id="bootbar"></i></div>
+      <p id="boottip" class="tip">Warming up the wobbulator…</p>
+    </div>
+  </div>
+
+  <!-- ══ title / start ══ -->
+  <div id="start" class="screen hidden">
+    <div class="boot-inner">
+      <h1 class="title">Cosmic&nbsp;Cow<br /><span>Caper</span></h1>
+      <p class="pitch">Fly your saucer. Beam up cows.<br />Get the biggest score in the galaxy!</p>
+      <button id="playbtn" class="bigbtn">PLAY</button>
+      <p id="besthint" class="tip"></p>
+    </div>
+  </div>
+
+  <!-- ══ HUD ══ -->
+  <div id="hud" class="hidden">
+    <div class="hud-top">
+      <div class="pill score-pill">
+        <span class="pill-label">SCORE</span>
+        <span id="score">0</span>
+      </div>
+      <div id="combo" class="pill combo-pill hidden">
+        <span id="combox">x2</span>
+        <i class="combo-fuse"><b id="combofuse"></b></i>
+      </div>
+      <div class="pill zone-pill"><span id="zonename">The Wilds</span></div>
+    </div>
+
+    <div class="hud-cargo">
+      <div class="cargo-label">CARGO</div>
+      <div id="cargo" class="cargo-slots"></div>
+    </div>
+
+    <div id="popups" class="popups"></div>
+
+    <!-- ══ touch controls ══ -->
+    <div id="stick" class="stick">
+      <div class="stick-pad"><div id="nub" class="stick-nub"></div></div>
+    </div>
+
+    <div class="pads">
+      <button class="pad pad-x" data-act="drop"><span>X</span><i>DROP</i></button>
+      <button class="pad pad-y" data-act="moo"><span>Y</span><i>MOO</i></button>
+      <button class="pad pad-a" data-act="beam"><span>A</span><i>BEAM</i></button>
+      <button class="pad pad-b" data-act="boost"><span>B</span><i>BOOST</i></button>
+    </div>
+
+    <button id="pausebtn" class="iconbtn" aria-label="Pause">❚❚</button>
+  </div>
+
+  <!-- ══ pause ══ -->
+  <div id="pause" class="screen hidden">
+    <div class="boot-inner">
+      <h2 class="title small">Paused</h2>
+      <div id="pausestats" class="stats"></div>
+      <button id="resumebtn" class="bigbtn">RESUME</button>
+      <button id="musicbtn" class="minibtn">MUSIC: ON</button>
+      <button id="sfxbtn" class="minibtn">SOUND: ON</button>
+    </div>
+  </div>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>

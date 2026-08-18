@@ -1,0 +1,634 @@
+{
+  "accessors": [
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 1856,
+      "max": [
+        1.0627470016479492,
+        1.0416364669799805,
+        1.4108721017837524
+      ],
+      "min": [
+        -1.0567219257354736,
+        -1.0378127098083496,
+        -1.2988182306289673
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 22272,
+      "componentType": 5126,
+      "count": 1856,
+      "max": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "min": [
+        -1.0,
+        -1.0,
+        -1.0
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 0,
+      "componentType": 5125,
+      "count": 3540,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 44544,
+      "componentType": 5126,
+      "count": 605,
+      "max": [
+        1.0245825052261353,
+        1.0245825052261353,
+        1.651058316230774
+      ],
+      "min": [
+        -1.0245825052261353,
+        -1.0245825052261353,
+        1.1626763343811035
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 51804,
+      "componentType": 5126,
+      "count": 605,
+      "max": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "min": [
+        -1.0,
+        -1.0,
+        -0.9999999403953552
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 0,
+      "byteOffset": 14160,
+      "componentType": 5125,
+      "count": 996,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 59064,
+      "componentType": 5126,
+      "count": 40,
+      "max": [
+        -0.5111528635025024,
+        0.7718663215637207,
+        1.7909414768218994
+      ],
+      "min": [
+        -0.7684369087219238,
+        0.5122912526130676,
+        1.4899460077285767
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 59544,
+      "componentType": 5126,
+      "count": 40,
+      "max": [
+        0.9999958276748657,
+        0.9998978972434998,
+        1.0
+      ],
+      "min": [
+        -0.9999908804893494,
+        -0.9999106526374817,
+        -0.9999999403953552
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 0,
+      "byteOffset": 18144,
+      "componentType": 5125,
+      "count": 60,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 60024,
+      "componentType": 5126,
+      "count": 544,
+      "max": [
+        1.0833714008331299,
+        1.0665937662124634,
+        -1.2944493293762207
+      ],
+      "min": [
+        -1.082376480102539,
+        -1.0665937662124634,
+        -1.3981389999389648
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 66552,
+      "componentType": 5126,
+      "count": 544,
+      "max": [
+        0.966214120388031,
+        1.0,
+        1.0
+      ],
+      "min": [
+        -0.966214120388031,
+        -1.0,
+        -1.0
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 0,
+      "byteOffset": 18384,
+      "componentType": 5125,
+      "count": 960,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 73080,
+      "componentType": 5126,
+      "count": 578,
+      "max": [
+        0.6973471641540527,
+        -0.9222974181175232,
+        1.3319659233093262
+      ],
+      "min": [
+        -0.6973471641540527,
+        -1.0438400506973267,
+        -1.167650818824768
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 80016,
+      "componentType": 5126,
+      "count": 578,
+      "max": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "min": [
+        -1.0,
+        -1.0,
+        -1.0
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 0,
+      "byteOffset": 22224,
+      "componentType": 5125,
+      "count": 1020,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 86952,
+      "componentType": 5126,
+      "count": 72,
+      "max": [
+        0.5801246762275696,
+        -1.0,
+        0.4030188024044037
+      ],
+      "min": [
+        0.21858744323253632,
+        -1.0210602283477783,
+        0.23974505066871643
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 87816,
+      "componentType": 5126,
+      "count": 72,
+      "max": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "min": [
+        -1.0,
+        -1.0,
+        -1.0
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 0,
+      "byteOffset": 26304,
+      "componentType": 5125,
+      "count": 120,
+      "type": "SCALAR"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 88680,
+      "componentType": 5126,
+      "count": 4,
+      "max": [
+        0.47643178701400757,
+        -1.002840518951416,
+        0.34902697801589966
+      ],
+      "min": [
+        0.31821703910827637,
+        -1.002840518951416,
+        0.29373687505722046
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 88728,
+      "componentType": 5126,
+      "count": 4,
+      "max": [
+        0.0,
+        -1.0,
+        0.0
+      ],
+      "min": [
+        0.0,
+        -1.0,
+        0.0
+      ],
+      "type": "VEC3"
+    },
+    {
+      "bufferView": 0,
+      "byteOffset": 26784,
+      "componentType": 5125,
+      "count": 6,
+      "type": "SCALAR"
+    }
+  ],
+  "asset": {
+    "extras": {
+      "author": "Tiko (https://sketchfab.com/tikoavp)",
+      "license": "CC-BY-SA-4.0 (http://creativecommons.org/licenses/by-sa/4.0/)",
+      "source": "https://sketchfab.com/3d-models/porta-potty-low-poly-style-d105f73bacae47d1b3b23a00fe8f4629",
+      "title": "Porta Potty (Low Poly Style)"
+    },
+    "generator": "Sketchfab-12.66.0",
+    "version": "2.0"
+  },
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteLength": 26808,
+      "name": "floatBufferViews",
+      "target": 34963
+    },
+    {
+      "buffer": 0,
+      "byteLength": 88776,
+      "byteOffset": 26808,
+      "byteStride": 12,
+      "name": "floatBufferViews",
+      "target": 34962
+    }
+  ],
+  "buffers": [
+    {
+      "byteLength": 115584,
+      "uri": "scene.bin"
+    }
+  ],
+  "materials": [
+    {
+      "doubleSided": true,
+      "name": "Light_Blue",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.125478,
+          0.35763,
+          1.0,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 0.17138640108470282
+      }
+    },
+    {
+      "doubleSided": true,
+      "name": "White",
+      "pbrMetallicRoughness": {
+        "metallicFactor": 0.0,
+        "roughnessFactor": 0.0
+      }
+    },
+    {
+      "doubleSided": true,
+      "name": "Metal",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.5596,
+          0.5596,
+          0.5596,
+          1.0
+        ],
+        "metallicFactor": 0.7070101356486633,
+        "roughnessFactor": 0.0
+      }
+    },
+    {
+      "doubleSided": true,
+      "name": "Balaclava",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.0800097,
+          0.0800097,
+          0.0800097,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 0.9821092871940635
+      }
+    },
+    {
+      "doubleSided": true,
+      "name": "Red_SDR",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          1.0,
+          0.0,
+          0.0,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 0.9524611947983544
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "Porta Potty_Light Blue_0",
+      "primitives": [
+        {
+          "attributes": {
+            "NORMAL": 1,
+            "POSITION": 0
+          },
+          "indices": 2,
+          "material": 0,
+          "mode": 4
+        }
+      ]
+    },
+    {
+      "name": "Porta Potty_White_0",
+      "primitives": [
+        {
+          "attributes": {
+            "NORMAL": 4,
+            "POSITION": 3
+          },
+          "indices": 5,
+          "material": 1,
+          "mode": 4
+        }
+      ]
+    },
+    {
+      "name": "Porta Potty_Metal_0",
+      "primitives": [
+        {
+          "attributes": {
+            "NORMAL": 7,
+            "POSITION": 6
+          },
+          "indices": 8,
+          "material": 2,
+          "mode": 4
+        }
+      ]
+    },
+    {
+      "name": "Porta Potty_Balaclava_0",
+      "primitives": [
+        {
+          "attributes": {
+            "NORMAL": 10,
+            "POSITION": 9
+          },
+          "indices": 11,
+          "material": 3,
+          "mode": 4
+        }
+      ]
+    },
+    {
+      "name": "Porta Potty Door_Light Blue_0",
+      "primitives": [
+        {
+          "attributes": {
+            "NORMAL": 13,
+            "POSITION": 12
+          },
+          "indices": 14,
+          "material": 0,
+          "mode": 4
+        }
+      ]
+    },
+    {
+      "name": "Porta Potty Door_Metal_0",
+      "primitives": [
+        {
+          "attributes": {
+            "NORMAL": 16,
+            "POSITION": 15
+          },
+          "indices": 17,
+          "material": 2,
+          "mode": 4
+        }
+      ]
+    },
+    {
+      "name": "Porta Potty Door_Red_SDR_0",
+      "primitives": [
+        {
+          "attributes": {
+            "NORMAL": 19,
+            "POSITION": 18
+          },
+          "indices": 20,
+          "material": 4,
+          "mode": 4
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "children": [
+        1
+      ],
+      "matrix": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        2.220446049250313e-16,
+        -1.0,
+        0.0,
+        0.0,
+        1.0,
+        2.220446049250313e-16,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "name": "Sketchfab_model"
+    },
+    {
+      "children": [
+        2
+      ],
+      "matrix": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        -1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "name": "9f0dd19be0f646f98f1321fe0b8363dc.fbx"
+    },
+    {
+      "children": [
+        3
+      ],
+      "name": "RootNode"
+    },
+    {
+      "children": [
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "matrix": [
+        65.2618408203125,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        -1.1833229299399677e-05,
+        -72.63184356689356,
+        0.0,
+        0.0,
+        99.99999999999868,
+        -1.629206793918314e-05,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "name": "Porta Potty"
+    },
+    {
+      "mesh": 0,
+      "name": "Porta Potty_Light Blue_0"
+    },
+    {
+      "mesh": 1,
+      "name": "Porta Potty_White_0"
+    },
+    {
+      "mesh": 2,
+      "name": "Porta Potty_Metal_0"
+    },
+    {
+      "mesh": 3,
+      "name": "Porta Potty_Balaclava_0"
+    },
+    {
+      "children": [
+        9,
+        10,
+        11
+      ],
+      "matrix": [
+        0.9999999403953552,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        -0.02264888770878315,
+        1.1920928955078125e-07,
+        1.0
+      ],
+      "name": "Porta Potty Door"
+    },
+    {
+      "mesh": 4,
+      "name": "Porta Potty Door_Light Blue_0"
+    },
+    {
+      "mesh": 5,
+      "name": "Porta Potty Door_Metal_0"
+    },
+    {
+      "mesh": 6,
+      "name": "Porta Potty Door_Red_SDR_0"
+    }
+  ],
+  "scene": 0,
+  "scenes": [
+    {
+      "name": "Sketchfab_Scene",
+      "nodes": [
+        0
+      ]
+    }
+  ]
+}
