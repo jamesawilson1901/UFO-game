@@ -15,7 +15,17 @@ const TIPS = [
 
 const BEST_KEY = 'ccc.best'
 
+/** CSS can't know the deploy base path, so the sprite URLs are set here. */
+async function paintControlSprites() {
+  const { url } = await import('./core/assets.js')
+  const r = document.documentElement.style
+  r.setProperty('--img-stick-pad', `url("${url('assets/ui/joystick_circle_pad_b.png')}")`)
+  r.setProperty('--img-stick-nub', `url("${url('assets/ui/joystick_circle_nub_b.png')}")`)
+  r.setProperty('--img-button', `url("${url('assets/ui/button_circle.png')}")`)
+}
+
 async function boot() {
+  await paintControlSprites()
   const bar = $('bootbar')
   const tip = $('boottip')
   let tipIdx = 0

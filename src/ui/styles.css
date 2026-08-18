@@ -14,6 +14,12 @@
   --sky: #4cc9f0;
   --cream: #fff6e5;
 
+  /* Sprite URLs are injected from JS so they respect the deploy base path
+     (the game may be served from a subdirectory, e.g. GitHub Pages). */
+  --img-stick-pad: none;
+  --img-stick-nub: none;
+  --img-button: none;
+
   --pad: max(14px, env(safe-area-inset-left));
   --pad-b: max(14px, env(safe-area-inset-bottom));
 
@@ -205,7 +211,7 @@ html, body {
 }
 .stick-pad {
   position: absolute; inset: 0;
-  background: url("/assets/ui/joystick_circle_pad_b.png") center/contain no-repeat;
+  background: var(--img-stick-pad) center/contain no-repeat;
   opacity: .78;
   display: grid; place-items: center;
   transition: opacity .15s;
@@ -213,7 +219,7 @@ html, body {
 .stick.active .stick-pad { opacity: 1; }
 .stick-nub {
   width: 46%; height: 46%;
-  background: url("/assets/ui/joystick_circle_nub_b.png") center/contain no-repeat;
+  background: var(--img-stick-nub) center/contain no-repeat;
   will-change: transform;
   filter: drop-shadow(0 3px 8px rgba(0, 0, 0, .5));
 }
@@ -233,7 +239,7 @@ html, body {
   pointer-events: auto;
   touch-action: none;
   display: grid; place-items: center; gap: 0;
-  background: url("/assets/ui/button_circle.png") center/contain no-repeat;
+  background: var(--img-button) center/contain no-repeat;
   color: #fff;
   transition: transform .07s, filter .07s;
   filter: drop-shadow(0 4px 8px rgba(0, 0, 0, .45));
