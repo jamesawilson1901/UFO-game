@@ -366,10 +366,10 @@ html, body {
 /* ══ alert banner + toast ══════════════════════════════════════════ */
 .alert {
   position: absolute;
-  top: max(58px, calc(env(safe-area-inset-top) + 48px));
+  top: max(96px, calc(env(safe-area-inset-top) + 86px));
   left: 50%; transform: translateX(-50%);
   padding: 8px 22px;
-  background: rgba(217, 74, 74, .9);
+  background: rgba(217, 74, 74, .92);
   border-radius: 999px;
   font: 900 clamp(12px, 2.8vmin, 17px)/1 system-ui, sans-serif;
   letter-spacing: .08em;

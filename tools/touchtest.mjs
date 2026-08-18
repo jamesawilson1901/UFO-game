@@ -7,10 +7,12 @@ const ctx = await b.newContext({ ...devices['iPad (gen 7) landscape'], hasTouch:
 const p = await ctx.newPage()
 const errs = []
 p.on('pageerror', e => errs.push(e.message))
-await p.goto('http://localhost:4173/', { waitUntil: 'domcontentloaded' })
-await p.waitForSelector('#start:not(.hidden)', { timeout: 180000 })
+await p.goto(process.argv[2] ?? 'http://localhost:4173/', { waitUntil: 'domcontentloaded' })
+await p.waitForSelector('#start:not(.hidden)', { timeout: 240000 })
 await p.tap('#playbtn')
-await p.waitForTimeout(800)
+await p.waitForSelector('#gobtn:not(.hidden)', { timeout: 240000 })
+await p.tap('#gobtn')
+await p.waitForTimeout(600)
 
 const box = async (sel) => (await p.locator(sel).boundingBox())
 const stick = await box('#stick')

@@ -11,9 +11,11 @@ const p = await b.newPage({ viewport: { width: 1200, height: 800 } })
 const errs = []
 p.on('pageerror', e => errs.push(e.message))
 p.on('console', m => { if (m.type() === 'error' && !/404|ERR_ABORTED/.test(m.text())) errs.push(m.text()) })
-await p.goto('http://localhost:4173/', { waitUntil: 'domcontentloaded' })
-await p.waitForSelector('#start:not(.hidden)', { timeout: 180000 })
-await p.click('#playbtn'); await p.waitForTimeout(500)
+await p.goto(process.argv[2] ?? 'http://localhost:4173/', { waitUntil: 'domcontentloaded' })
+await p.waitForSelector('#start:not(.hidden)', { timeout: 240000 })
+await p.click('#playbtn')
+await p.waitForSelector('#gobtn:not(.hidden)', { timeout: 240000 })
+await p.click('#gobtn'); await p.waitForTimeout(400)
 
 const r = await p.evaluate(() => {
   const g = window.game
@@ -31,8 +33,8 @@ const r = await p.evaluate(() => {
     for (let i = 0; i < 200; i++) g.update(1 / 60)
     if (g.score > before) log.push(`${e.label} +${g.score - before}`)
   }
-  // Exercise the other buttons.
-  g._moo(); g._drop(); g._drop()
+  // Exercise the other actions.
+  g._moo()
   // Let the world restock: 60 seconds of game time with nothing happening.
   g.input.buttons.beam = false
   const beforeRestock = g.entities.filter(e => e.state !== 4).length

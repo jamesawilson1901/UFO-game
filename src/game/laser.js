@@ -21,21 +21,23 @@ export class Lasers {
     this.fireRate = 0.14           // seconds between shots while held
     this.speed = 150
     this.life = 1.4
-    this.radius = 4.2              // splash radius on impact
+    this.radius = 5.5              // splash radius on impact
 
     // One shared geometry + material; bolts are pooled, never allocated live.
-    const geo = new THREE.CapsuleGeometry(0.32, 2.4, 3, 6)
+    // Chunky and bright: a thin bolt is invisible at this camera distance,
+    // and the whole point is that a five-year-old can see they are shooting.
+    const geo = new THREE.CapsuleGeometry(0.62, 5.2, 4, 8)
     geo.rotateX(Math.PI / 2)
-    const mat = new THREE.MeshBasicMaterial({ color: 0xff4d6d, transparent: true, depthWrite: false })
+    const mat = new THREE.MeshBasicMaterial({ color: 0xff3355, transparent: true, depthWrite: false })
     this.core = new THREE.InstancedMesh(geo, mat, MAX_BOLTS)
     this.core.instanceMatrix.setUsage(THREE.DynamicDrawUsage)
     this.core.frustumCulled = false
     this.core.count = MAX_BOLTS
     scene.add(this.core)
 
-    const glowGeo = new THREE.SphereGeometry(1.1, 8, 6)
+    const glowGeo = new THREE.SphereGeometry(2.1, 8, 6)
     const glowMat = new THREE.MeshBasicMaterial({
-      color: 0xffc2cf, transparent: true, opacity: 0.5,
+      color: 0xffd0dc, transparent: true, opacity: 0.55,
       depthWrite: false, blending: THREE.AdditiveBlending,
     })
     this.glow = new THREE.InstancedMesh(glowGeo, glowMat, MAX_BOLTS)
