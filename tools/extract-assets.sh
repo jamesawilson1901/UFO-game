@@ -37,13 +37,47 @@ say "food kit"
 have "$MG/Kenny/kenney_food-kit.zip" &&
   unzip -o -j -q "$MG/Kenny/kenney_food-kit.zip" 'Models/GLB format/*.glb' -d "$OUT/food"
 
-# Kenney GLBs reference a shared palette texture by relative path; it has to
-# sit in a Textures/ folder beside each set of models.
+# ── themed kits: one world is built from each ────────────────────────────────
+say "holiday kit (snow world)"
+have "$MG/Kenny/kenney_holiday-kit.zip" &&
+  unzip -o -j -q "$MG/Kenny/kenney_holiday-kit.zip" 'Models/GLB format/*.glb' -d "$OUT/holiday"
+
+say "castle kit (siege world)"
+have "$MG/Kenny/kenney_castle-kit.zip" &&
+  unzip -o -j -q "$MG/Kenny/kenney_castle-kit.zip" 'Models/GLB format/*.glb' -d "$OUT/castle"
+
+say "survival kit (jungle camp world)"
+have "$MG/Kenny/kenney_survival-kit.zip" &&
+  unzip -o -j -q "$MG/Kenny/kenney_survival-kit.zip" 'Models/GLB format/*.glb' -d "$OUT/survival"
+
+say "graveyard (spooky world)"
+have "$MG/kyrises-voxel-graveyard-environment-pack.zip" &&
+  unzip -o -j -q "$MG/kyrises-voxel-graveyard-environment-pack.zip" 'glTF/*' -d "$OUT/spooky"
+
+say "skeletons (spooky world NPCs)"
+have "$MG/Kenny/KayKit_Skeletons_1.1_FREE.zip" &&
+  unzip -o -j -q "$MG/Kenny/KayKit_Skeletons_1.1_FREE.zip" \
+    'KayKit_Skeletons_1.1_FREE/characters/gltf/*' -d "$OUT/chars"
+
+# ── palette atlases ─────────────────────────────────────────────────────────
+# Every Kenney kit ships its OWN colormap.png and references it by relative
+# path. They are NOT interchangeable — using one kit's atlas for another maps
+# every surface to the wrong swatch (snow turns black, cabins turn grey).
 say "colormaps"
-for d in town pirate food; do
-  mkdir -p "$OUT/$d/Textures"
-  cp -f "$MG/Kenny/GLB format/Textures/colormap.png" "$OUT/$d/Textures/" 2>/dev/null || true
-done
+copy_colormap() {   # <zip> <out-subdir>
+  local zip="$1" out="$2"
+  mkdir -p "$OUT/$out/Textures"
+  unzip -o -j -q "$zip" 'Models/GLB format/Textures/colormap.png' \
+    -d "$OUT/$out/Textures" 2>/dev/null || echo "  ?? no colormap in $(basename "$zip")"
+}
+copy_colormap "$MG/Kenny/kenney_fantasy-town-kit_2.0.zip" town
+copy_colormap "$MG/Kenny/kenney_food-kit.zip"             food
+copy_colormap "$MG/Kenny/kenney_holiday-kit.zip"          holiday
+copy_colormap "$MG/Kenny/kenney_castle-kit.zip"           castle
+copy_colormap "$MG/Kenny/kenney_survival-kit.zip"         survival
+# The pirate kit was unpacked as loose files, so its atlas sits beside them.
+mkdir -p "$OUT/pirate/Textures"
+cp -f "$MG/Kenny/GLB format/Textures/colormap.png" "$OUT/pirate/Textures/" 2>/dev/null || true
 
 # ── farm: Quaternius barns/silos/windmills (OBJ+MTL, vertex-coloured) ────────
 say "farm buildings"

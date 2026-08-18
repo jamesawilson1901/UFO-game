@@ -25,9 +25,9 @@
 
   /* Controls scale with the short edge so they stay thumb-sized on
      everything from a phone to a 13" tablet. */
-  --stick-size: clamp(120px, 26vmin, 200px);
-  --pad-size: clamp(58px, 12vmin, 92px);
-  --cluster: clamp(150px, 33vmin, 250px);
+  --stick-size: clamp(130px, 30vmin, 220px);
+  --pad-size: clamp(64px, 14vmin, 104px);
+  --cluster: clamp(165px, 38vmin, 280px);
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -332,3 +332,101 @@ html, body {
   100% { transform: translateX(-50%) scale(1); }
 }
 @media (max-height: 460px) { .rank { display: none; } }
+
+/* ══ landscape lock ═════════════════════════════════════════════════
+   The HUD puts a thumb-stick in each bottom corner, which only works
+   with the device held wide. Portrait gets a friendly nudge instead of
+   a squashed, unplayable layout. */
+.rotate { z-index: 90; }
+.rotate-icon {
+  font-size: clamp(56px, 18vmin, 120px);
+  animation: tip 1.8s ease-in-out infinite;
+  margin-bottom: 10px;
+}
+@keyframes tip {
+  0%, 100% { transform: rotate(0deg); }
+  50% { transform: rotate(-90deg); }
+}
+
+/* ══ timer ═════════════════════════════════════════════════════════ */
+.time-pill span:last-child {
+  font-size: clamp(18px, 4.4vmin, 30px);
+  color: var(--glow);
+  font-variant-numeric: tabular-nums;
+}
+.time-pill.low { border-color: var(--melon); }
+.time-pill.low span:last-child { color: var(--melon); }
+.time-pill.tick { animation: tickpop .35s ease; }
+@keyframes tickpop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.22); }
+  100% { transform: scale(1); }
+}
+
+/* ══ alert banner + toast ══════════════════════════════════════════ */
+.alert {
+  position: absolute;
+  top: max(58px, calc(env(safe-area-inset-top) + 48px));
+  left: 50%; transform: translateX(-50%);
+  padding: 8px 22px;
+  background: rgba(217, 74, 74, .9);
+  border-radius: 999px;
+  font: 900 clamp(12px, 2.8vmin, 17px)/1 system-ui, sans-serif;
+  letter-spacing: .08em;
+  animation: alertpulse 1s ease-in-out infinite;
+  pointer-events: none;
+  white-space: nowrap;
+}
+@keyframes alertpulse {
+  0%, 100% { opacity: .75; }
+  50% { opacity: 1; }
+}
+
+.toast {
+  position: absolute;
+  left: 50%; top: 34%;
+  transform: translate(-50%, -50%) scale(.6);
+  font: 900 clamp(20px, 5.5vmin, 42px)/1.1 system-ui, sans-serif;
+  color: var(--sun);
+  text-shadow: 0 4px 0 rgba(0, 0, 0, .35), 0 0 24px rgba(0, 0, 0, .5);
+  opacity: 0;
+  pointer-events: none;
+  text-align: center;
+  white-space: nowrap;
+}
+.toast.show { animation: toastin 1.8s cubic-bezier(.2, .8, .3, 1) forwards; }
+@keyframes toastin {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(.5); }
+  12% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+  22% { transform: translate(-50%, -50%) scale(1); }
+  78% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -70%) scale(.95); }
+}
+
+/* ══ world intro ═══════════════════════════════════════════════════ */
+.world-icon {
+  font-size: clamp(60px, 20vmin, 130px);
+  line-height: 1;
+  margin-bottom: 8px;
+  animation: bob 2.2s ease-in-out infinite;
+}
+
+/* ══ results ═══════════════════════════════════════════════════════ */
+.final-score {
+  font: 900 clamp(46px, 15vmin, 110px)/1 system-ui, sans-serif;
+  color: var(--sun);
+  text-shadow: 0 6px 0 #7a4a00, 0 0 40px rgba(255, 210, 63, .5);
+  font-variant-numeric: tabular-nums;
+  margin: 6px 0;
+}
+.final-rank {
+  font: 900 clamp(15px, 3.6vmin, 24px)/1 system-ui, sans-serif;
+  letter-spacing: .1em;
+  color: var(--glow);
+  margin-bottom: 10px;
+}
+.best-line {
+  font: 800 clamp(12px, 2.8vmin, 16px)/1.6 system-ui, sans-serif;
+  color: var(--lime);
+  min-height: 1.6em;
+}

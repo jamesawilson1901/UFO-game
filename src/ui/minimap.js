@@ -1,4 +1,4 @@
-import { ZONES, WORLD } from '../world/zones.js'
+import { WORLD_SIZE, WORLD_HALF } from '../world/themes.js'
 
 /**
  * A sprawling world is only fun if you can find your way back to the cows.
@@ -6,13 +6,6 @@ import { ZONES, WORLD } from '../world/zones.js'
  * saucer, and a nose showing which way you're pointing. No labels, no clutter
  * — a five-year-old reads shape and colour, not text.
  */
-const ZONE_COLOR = {
-  farm: '#8ec751',
-  medical: '#ff6b6b',
-  pirate: '#e0c377',
-  wilds: '#3f8f43',
-}
-const ZONE_ICON = { farm: '🐄', medical: '🏥', pirate: '🏴‍☠️', wilds: '🌲' }
 
 export class Minimap {
   constructor(size = 132) {
@@ -32,11 +25,17 @@ export class Minimap {
   /** World XZ -> canvas pixels. */
   _p(x, z) {
     const s = this.size * 2
-    const k = s / WORLD.size
-    return [(x + WORLD.half) * k, (z + WORLD.half) * k]
+    const k = s / WORLD_SIZE
+    return [(x + WORLD_HALF) * k, (z + WORLD_HALF) * k]
   }
 
-  draw(ufo, dt) {
+  /** Landmarks come from the world build, so the map suits any theme. */
+  setLandmarks(list, groundColor) {
+    this.landmarks = list ?? []
+    this.ground = groundColor ?? 0x86bb51
+  }
+
+  draw(ufo, dt, rival = null) {
     this._t += dt
     const { ctx } = this
     const s = this.size * 2
@@ -53,25 +52,20 @@ export class Minimap {
     ctx.roundRect(0, 0, s, s, 26)
     ctx.clip()
 
-    ctx.fillStyle = 'rgba(134,187,81,.30)'
+    const g = this.ground ?? 0x86bb51
+    ctx.fillStyle = `rgba(${(g >> 16) & 255},${(g >> 8) & 255},${g & 255},.42)`
     ctx.fillRect(0, 0, s, s)
 
-    // Districts
-    for (const zn of ZONES) {
-      const [x, y] = this._p(zn.at[0], zn.at[1])
-      const r = (zn.radius / WORLD.size) * s
-      const g = ctx.createRadialGradient(x, y, r * 0.2, x, y, r)
-      g.addColorStop(0, `${ZONE_COLOR[zn.id]}dd`)
-      g.addColorStop(1, `${ZONE_COLOR[zn.id]}00`)
-      ctx.fillStyle = g
+    // Landmarks: small dots so the map reads as a place, not a blank square.
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'middle'
+    for (const l of this.landmarks ?? []) {
+      const [x, y] = this._p(l.pos.x, l.pos.z)
+      const big = l.kind === 'zone' || l.kind === 'landmark'
+      ctx.fillStyle = big ? 'rgba(255,246,229,.85)' : 'rgba(255,246,229,.42)'
       ctx.beginPath()
-      ctx.arc(x, y, r, 0, Math.PI * 2)
+      ctx.arc(x, y, big ? s * 0.018 : s * 0.011, 0, Math.PI * 2)
       ctx.fill()
-
-      ctx.font = `${Math.round(s * 0.13)}px system-ui`
-      ctx.textAlign = 'center'
-      ctx.textBaseline = 'middle'
-      ctx.fillText(ZONE_ICON[zn.id] ?? '', x, y)
     }
 
     // The saucer: a pulsing dot with a nose in the direction of travel.
@@ -104,6 +98,15 @@ export class Minimap {
     ctx.fill()
     ctx.stroke()
     ctx.restore()
+
+    // The rival, so you can see where the thief went.
+    if (rival?.alive) {
+      const [rx, ry] = this._p(rival.pos.x, rival.pos.z)
+      ctx.fillStyle = 'rgba(11,16,38,.75)'
+      ctx.beginPath(); ctx.arc(rx, ry, s * 0.05, 0, Math.PI * 2); ctx.fill()
+      ctx.fillStyle = Math.sin(this._t * 12) > 0 ? '#ff4d4d' : '#8dff6a'
+      ctx.beginPath(); ctx.arc(rx, ry, s * 0.032, 0, Math.PI * 2); ctx.fill()
+    }
 
     ctx.restore()
 

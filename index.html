@@ -13,6 +13,15 @@
 <body>
   <canvas id="stage"></canvas>
 
+  <!-- ══ rotate prompt: the game is landscape-only ══ -->
+  <div id="rotate" class="screen rotate hidden">
+    <div class="boot-inner">
+      <div class="rotate-icon">📱</div>
+      <h2 class="title small">Turn your tablet<br /><span>sideways!</span></h2>
+      <p class="pitch">Cosmic Cow Caper is played in landscape.</p>
+    </div>
+  </div>
+
   <!-- ══ loading ══ -->
   <div id="boot" class="screen">
     <div class="boot-inner">
@@ -27,13 +36,24 @@
     </div>
   </div>
 
-  <!-- ══ title / start ══ -->
+  <!-- ══ title ══ -->
   <div id="start" class="screen hidden">
     <div class="boot-inner">
       <h1 class="title">Cosmic&nbsp;Cow<br /><span>Caper</span></h1>
-      <p class="pitch">Fly your saucer. Beam up cows.<br />Get the biggest score in the galaxy!</p>
+      <p class="pitch">Fly your saucer. Beam up cows.<br />Zap the rival alien!</p>
       <button id="playbtn" class="bigbtn">PLAY</button>
       <p id="besthint" class="tip"></p>
+    </div>
+  </div>
+
+  <!-- ══ world intro ══ -->
+  <div id="intro" class="screen hidden">
+    <div class="boot-inner">
+      <div id="introicon" class="world-icon">🐄</div>
+      <h2 id="introname" class="title small">Sunnyside Farm</h2>
+      <p id="introblurb" class="pitch">Cows everywhere!</p>
+      <div class="bar"><i id="introbar"></i></div>
+      <button id="gobtn" class="bigbtn hidden">GO!</button>
     </div>
   </div>
 
@@ -44,31 +64,35 @@
         <span class="pill-label">SCORE</span>
         <span id="score">0</span>
       </div>
+      <div id="timepill" class="pill time-pill">
+        <span class="pill-label">TIME</span>
+        <span id="time">3:00</span>
+      </div>
       <div id="combo" class="pill combo-pill hidden">
         <span id="combox">x2</span>
         <i class="combo-fuse"><b id="combofuse"></b></i>
       </div>
-      <div class="pill zone-pill"><span id="zonename">The Wilds</span></div>
+      <div class="pill zone-pill"><span id="zonename">The Farm</span></div>
     </div>
 
-    <div class="hud-cargo">
-      <div id="cargo" class="cargo-slots"></div>
-    </div>
+    <div class="hud-cargo"><div id="cargo" class="cargo-slots"></div></div>
 
+    <div id="alert" class="alert hidden"></div>
+    <div id="toast" class="toast"></div>
     <div id="popups" class="popups"></div>
 
-    <!-- ══ touch controls ══ -->
     <div id="stick" class="stick">
       <div class="stick-pad"><div id="nub" class="stick-nub"></div></div>
     </div>
 
     <div class="pads">
-      <button class="pad pad-x" data-act="drop"><span>X</span><i>DROP</i></button>
+      <button class="pad pad-x" data-act="boost"><span>X</span><i>BOOST</i></button>
       <button class="pad pad-y" data-act="moo"><span>Y</span><i>MOO</i></button>
       <button class="pad pad-a" data-act="beam"><span>A</span><i>BEAM</i></button>
-      <button class="pad pad-b" data-act="boost"><span>B</span><i>BOOST</i></button>
+      <button class="pad pad-b" data-act="laser"><span>B</span><i>LASER</i></button>
     </div>
 
+    <div class="rank"><b id="rankname">Space Cadet</b><i><u id="rankbar"></u></i></div>
     <button id="pausebtn" class="iconbtn" aria-label="Pause">❚❚</button>
   </div>
 
@@ -80,6 +104,18 @@
       <button id="resumebtn" class="bigbtn">RESUME</button>
       <button id="musicbtn" class="minibtn">MUSIC: ON</button>
       <button id="sfxbtn" class="minibtn">SOUND: ON</button>
+    </div>
+  </div>
+
+  <!-- ══ results ══ -->
+  <div id="results" class="screen hidden">
+    <div class="boot-inner">
+      <h2 class="title small">Time's&nbsp;Up!</h2>
+      <div class="final-score"><span id="finalscore">0</span></div>
+      <div id="finalrank" class="final-rank">Space Cadet</div>
+      <div id="finalbest" class="best-line"></div>
+      <div id="finalstats" class="stats"></div>
+      <button id="againbtn" class="bigbtn">NEW WORLD</button>
     </div>
   </div>
 

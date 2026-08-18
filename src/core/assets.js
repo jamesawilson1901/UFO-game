@@ -70,9 +70,15 @@ export function normalizeMaterials(root, { flatShade = false } = {}) {
     if (!o.isMesh) return
     o.castShadow = true
     o.receiveShadow = true
+    /* Cached models are cloned into every round, and clones SHARE geometry
+       and materials with the original. Tagging them lets end-of-round
+       teardown free only what that round created — disposing a cached
+       geometry silently blanks the model in every later round. */
+    if (o.geometry) o.geometry.userData.shared = true
     const mats = Array.isArray(o.material) ? o.material : [o.material]
     for (const m of mats) {
       if (!m) continue
+      m.userData.shared = true
       if ('metalness' in m) m.metalness = 0
       if ('roughness' in m) m.roughness = 0.85
       if (flatShade) m.flatShading = true

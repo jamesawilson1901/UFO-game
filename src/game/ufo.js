@@ -25,8 +25,10 @@ const beamFrag = /* glsl */`
     // Fade out at the rim and at the ground end.
     float edge = smoothstep(0.0, 0.22, vUv.x) * smoothstep(1.0, 0.78, vUv.x);
     float vert = mix(0.35, 1.0, vUv.y);
-    float a = (0.20 + rings * 0.55) * vert * uPower;
-    a *= 0.55 + edge * 0.65;
+    // Kept deliberately faint: an opaque cone this wide hides the saucer,
+    // and the saucer is the thing the player is steering.
+    float a = (0.12 + rings * 0.34) * vert * uPower;
+    a *= 0.5 + edge * 0.5;
     gl_FragColor = vec4(uColor + rings * 0.25, a);
   }
 `
@@ -50,26 +52,30 @@ export class Ufo {
     this.maxSpeed = 30
     this.boostMax = 52
     this.drag = 3.0
-    this.hoverY = 21
+    this.hoverY = 23
     this.minY = 12
-    this.maxY = 46
+    this.maxY = 50
 
-    this.beamRadius = 8.5
+    this.beamRadius = 9
   }
 
   async load() {
-    const model = await assets.fbxModel('assets/ufo/ufo.fbx', 'assets/ufo/UFOTexture.png')
+    const cached = await assets.fbxModel('assets/ufo/ufo.fbx', 'assets/ufo/UFOTexture.png')
+    // Clone: the cache hands back one shared instance, and an Object3D can
+    // only have a single parent, so reusing it would tear the saucer out of
+    // whichever scene held it last.
+    const model = cached ? cached.clone(true) : null
     this.hull = new THREE.Group()
     if (model) {
       // The saucer is a flat disc: fitting it by height would scale it to
       // absurd width. Size it across instead.
-      fitToWidth(model, 9)
+      fitToWidth(model, 13)
       model.position.y = 0
       this.hull.add(model)
     } else {
       // Fallback saucer so the game still runs if the FBX is unavailable.
       const body = new THREE.Mesh(
-        new THREE.SphereGeometry(4.5, 20, 8, 0, Math.PI * 2, 0, Math.PI / 2),
+        new THREE.SphereGeometry(6.5, 20, 8, 0, Math.PI * 2, 0, Math.PI / 2),
         new THREE.MeshStandardMaterial({ color: 0xc8d2ff, metalness: 0.2, roughness: 0.4 }))
       body.scale.y = 0.28
       const dome = new THREE.Mesh(
@@ -82,12 +88,12 @@ export class Ufo {
 
     /* ── running lights around the rim ─────────────────────────── */
     this.lights = []
-    const bulbGeo = new THREE.SphereGeometry(0.34, 8, 6)
+    const bulbGeo = new THREE.SphereGeometry(0.46, 8, 6)
     for (let i = 0; i < 10; i++) {
       const a = (i / 10) * Math.PI * 2
       const m = new THREE.MeshBasicMaterial({ color: 0xffe066 })
       const b = new THREE.Mesh(bulbGeo, m)
-      b.position.set(Math.cos(a) * 3.9, -0.35, Math.sin(a) * 3.9)
+      b.position.set(Math.cos(a) * 5.6, -0.5, Math.sin(a) * 5.6)
       this.hull.add(b)
       this.lights.push(m)
     }
@@ -105,18 +111,23 @@ export class Ufo {
       fragmentShader: beamFrag,
       transparent: true,
       depthWrite: false,
-      side: THREE.DoubleSide,
+      // BackSide only: an additive double-sided cone draws its near and far
+      // walls over each other, doubling the brightness and hiding whatever
+      // is inside it — including the cow you are trying to watch.
+      side: THREE.BackSide,
       blending: THREE.AdditiveBlending,
     }))
     this.beam.visible = false
     this.group.add(this.beam)
 
     // Glowing puddle where the beam lands.
+    /* A soft ring where the beam lands rather than a filled disc: a bright
+       additive circle reads as fog and hides the very thing being beamed. */
     this.splash = new THREE.Mesh(
-      new THREE.CircleGeometry(1, 28),
+      new THREE.RingGeometry(0.72, 1, 32),
       new THREE.MeshBasicMaterial({
-        color: 0x9dffbe, transparent: true, opacity: 0.35,
-        depthWrite: false, blending: THREE.AdditiveBlending,
+        color: 0x9dffbe, transparent: true, opacity: 0.5,
+        depthWrite: false, side: THREE.DoubleSide,
       }))
     this.splash.rotation.x = -Math.PI / 2
     this.splash.visible = false
@@ -202,20 +213,22 @@ export class Ufo {
     this.beam.visible = visible
     this.splash.visible = visible
     if (visible) {
-      const drop = this.pos.y - ground
+      // Start the cone below the hull so it never draws over the saucer.
+      const top = -3.2
+      const drop = this.pos.y - ground + top
       const fp = this.beamFootprint(ground)
       this.beam.scale.set(fp.radius, drop, fp.radius)
-      this.beam.position.y = -drop / 2
+      this.beam.position.y = top - drop / 2
       this.beamUniforms.uTime.value = t
       this.beamUniforms.uPower.value = this.beamPower
 
-      this.splash.position.y = -drop + 0.35
+      this.splash.position.y = top - drop + 0.35
       const pulse = 1 + Math.sin(t * 9) * 0.05
       this.splash.scale.setScalar(fp.radius * pulse)
-      this.splash.material.opacity = 0.3 * this.beamPower
+      this.splash.material.opacity = 0.55 * this.beamPower
 
       this.beamLight.position.y = -drop * 0.55
-      this.beamLight.intensity = 90 * this.beamPower
+      this.beamLight.intensity = 70 * this.beamPower
       this.beamLight.distance = drop * 2.2
     } else {
       this.beamLight.intensity = 0

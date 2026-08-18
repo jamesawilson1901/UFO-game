@@ -35,6 +35,7 @@ export class Abductable {
     this.velY = 0
     this.sfx = opts.sfx
     this.chatter = 2 + Math.random() * 8
+    this.stun = 0
   }
 
   get pos() { return this.root.position }
@@ -47,9 +48,17 @@ export class Abductable {
     this.think = 2 + Math.random() * 4
   }
 
+  /** Zapped: sits down dizzy for a few seconds and stops running away. */
+  zap(seconds = 3.5) {
+    this.stun = Math.max(this.stun, seconds)
+    this.panic = 0
+    return true
+  }
+
   update(dt, ctx) {
     const { world, ufo, t, audio } = ctx
     if (this.state === STATE.DONE) return
+    if (this.stun > 0) this.stun = Math.max(0, this.stun - dt)
 
     const p = this.root.position
     const dx = ufo.pos.x - p.x
@@ -87,6 +96,7 @@ export class Abductable {
       }
 
       case STATE.FLEE: {
+        if (this.stun > 0) { this.moveSpeed = 0; break }
         this.panic = Math.max(0, this.panic - dt * 0.35)
         // Run directly away from the saucer's ground point.
         const len = Math.max(0.001, distXZ)
@@ -112,6 +122,7 @@ export class Abductable {
       }
 
       default: {
+        if (this.stun > 0) { this.moveSpeed = 0; break }
         // Spook when the saucer looms overhead, beam or not.
         if (distXZ < fp.radius * 2.1 && ufo.pos.y - this.groundY < 34) {
           this.state = STATE.FLEE
@@ -150,6 +161,7 @@ export class Abductable {
 
     /* ── settle on the ground unless being lifted ───────────────── */
     if (this.state !== STATE.LIFTED) {
+      if (this.stun <= 0) this.root.rotation.z *= 1 - Math.min(1, dt * 6)
       this.groundY = world.heightAt(p.x, p.z)
       if (p.y > this.groundY + 0.02) {
         this.velY -= 26 * dt
@@ -217,34 +229,52 @@ export class CritterEntity extends Abductable {
       speed: this.moveSpeed ?? 0,
       panic: this.panic,
       lifted: this.lift,
+      stun: Math.min(1, this.stun),
     })
   }
 }
 
 /* ══ people ════════════════════════════════════════════════════════ */
 /*
- * The packs have no medical or pirate skins, only fantasy adventurers. Tinting
- * their textured materials just multiplies everything toward black, so staff
- * are given a flat uniform colour instead (which reads clearly from altitude)
- * while farmers, pirates and ramblers keep their original texture — an armed
- * hooded rogue already looks the part on a beach full of cannons.
+ * One cast list across every world. The packs only contain fantasy
+ * adventurers and skeletons, so a role is a base model plus (optionally) a
+ * flat uniform colour. Tinting a textured material only ever darkens it
+ * toward black, so uniforms REPLACE the material instead.
  */
 const HUMAN_KINDS = {
+  // farm
   farmer: { src: 'Barbarian', label: 'Farmer', icon: '🧑‍🌾', points: 150 },
   rambler: { src: 'Ranger', label: 'Rambler', icon: '🥾', points: 170 },
+  vet: { src: 'Mage', label: 'Vet', icon: '🧑‍⚕️', points: 200, uniform: 0x8fd4e8 },
+  // pirate
   pirate: { src: 'Rogue_Hooded', label: 'Pirate', icon: '🏴‍☠️', points: 240 },
   captain: { src: 'Knight', label: 'Pirate Captain', icon: '🦜', points: 400 },
-  vet: { src: 'Mage', label: 'Vet', icon: '🧑‍⚕️', points: 200, uniform: 0x8fd4e8 },
+  // hospital
   doctor: { src: 'Knight', label: 'Doctor', icon: '👨‍⚕️', points: 220, uniform: 0xf7fbfc },
   nurse: { src: 'Mage', label: 'Nurse', icon: '👩‍⚕️', points: 180, uniform: 0xe4f2fb },
   patient: { src: 'Rogue', label: 'Patient', icon: '🤒', points: 160, uniform: 0xa8dcc4 },
+  // spooky
+  skeleton: { src: 'Skeleton_Warrior', label: 'Skeleton', icon: '💀', points: 210 },
+  skelemage: { src: 'Skeleton_Mage', label: 'Bone Wizard', icon: '🧙', points: 320 },
+  ghoul: { src: 'Skeleton_Rogue', label: 'Ghoul', icon: '👻', points: 260 },
+  // snow
+  elf: { src: 'Rogue', label: 'Elf', icon: '🧝', points: 190, uniform: 0x3fae5a },
+  santa: { src: 'Barbarian', label: 'Santa', icon: '🎅', points: 500, uniform: 0xd8342f },
+  // castle
+  knight: { src: 'Knight', label: 'Knight', icon: '⚔️', points: 230 },
+  archer: { src: 'Ranger', label: 'Archer', icon: '🏹', points: 210 },
+  wizard: { src: 'Mage', label: 'Wizard', icon: '🧙‍♂️', points: 340, uniform: 0x7a5bd0 },
+  // jungle
+  explorer: { src: 'Ranger', label: 'Explorer', icon: '🧭', points: 200, uniform: 0xd8c48a },
 }
 
 export class HumanEntity extends Abductable {
   static clips = null
 
-  static async preload() {
-    const kinds = [...new Set(Object.values(HUMAN_KINDS).map((k) => k.src))]
+  static async preload(kindNames = null) {
+    const wanted = kindNames ? kindNames.map((n) => HUMAN_KINDS[n]).filter(Boolean)
+      : Object.values(HUMAN_KINDS)
+    const kinds = [...new Set(wanted.map((k) => k.src))]
     await Promise.all(kinds.map((k) => assets.glb(`assets/chars/${k}.glb`)))
     const [move, gen] = await Promise.all([
       assets.glb('assets/chars/Rig_Medium_MovementBasic.glb'),
@@ -284,7 +314,8 @@ export class HumanEntity extends Abductable {
     this.mixer = new THREE.AnimationMixer(model)
     this.actions = {}
     for (const [name, key] of [['idle', 'Idle_A'], ['walk', 'Walking_A'],
-      ['run', 'Running_A'], ['panic', 'Running_B'], ['lift', 'Spawn_Air']]) {
+      ['run', 'Running_A'], ['panic', 'Running_B'], ['lift', 'Spawn_Air'],
+      ['stunned', 'Hit_A']]) {
       const clip = HumanEntity.clips?.get(key)
       if (clip) {
         const act = this.mixer.clipAction(clip)
@@ -308,8 +339,10 @@ export class HumanEntity extends Abductable {
   }
 
   static _sources = new Map()
-  static async buildSources() {
-    for (const k of new Set(Object.values(HUMAN_KINDS).map((x) => x.src))) {
+  static async buildSources(kindNames = null) {
+    const wanted = kindNames ? kindNames.map((n) => HUMAN_KINDS[n]).filter(Boolean)
+      : Object.values(HUMAN_KINDS)
+    for (const k of new Set(wanted.map((x) => x.src))) {
       const g = await assets.glb(`assets/chars/${k}.glb`)
       if (g) HumanEntity._sources.set(k, g.scene)
     }
@@ -325,6 +358,10 @@ export class HumanEntity extends Abductable {
 
   animate(dt) {
     if (this.state === STATE.LIFTED) this._play('lift', 0.15)
+    else if (this.stun > 0) {
+      this._play('stunned', 0.15)
+      this.model.rotation.z = Math.sin(performance.now() / 90) * 0.2
+    }
     else if (this.panic > 0.15) this._play('panic', 0.15)
     else if ((this.moveSpeed ?? 0) > 0.2) this._play('walk')
     else this._play('idle')
@@ -381,4 +418,29 @@ export class PropEntity extends Abductable {
       }
     }
   }
+}
+
+/* ══ loot catalogue ════════════════════════════════════════════════
+   Themes name their loot; this maps a name to a model and its stats.
+   Sizes are deliberately oversized — a realistically-scaled donut is
+   invisible from the saucer, and a cow-sized one is funnier anyway.   */
+export const LOOT = {
+  pizza: { path: 'assets/food/pizza.glb', label: 'Pizza', icon: '🍕', points: 70, size: 3.2 },
+  burger: { path: 'assets/food/burger.glb', label: 'Burger', icon: '🍔', points: 60, size: 2.6 },
+  cake: { path: 'assets/food/cake-birthday.glb', label: 'Birthday Cake', icon: '🎂', points: 130, size: 3.0 },
+  donut: { path: 'assets/food/donut-sprinkles.glb', label: 'Donut', icon: '🍩', points: 50, size: 2.4 },
+  icecream: { path: 'assets/food/ice-cream.glb', label: 'Ice Cream', icon: '🍦', points: 65, size: 2.2 },
+  watermelon: { path: 'assets/food/watermelon.glb', label: 'Watermelon', icon: '🍉', points: 80, size: 2.4 },
+  turkey: { path: 'assets/food/turkey.glb', label: 'Roast Turkey', icon: '🍗', points: 110, size: 2.6 },
+  chest: { path: 'assets/pirate/chest.glb', label: 'Treasure Chest', icon: '💰', points: 300, size: 3.0 },
+  barrel: { path: 'assets/pirate/barrel.glb', label: 'Barrel', icon: '🛢️', points: 45, size: 2.0 },
+  cannonball: { path: 'assets/pirate/cannon-ball.glb', label: 'Cannonball', icon: '⚫', points: 35, size: 1.4 },
+  bottle: { path: 'assets/pirate/bottle-large.glb', label: 'Grog Bottle', icon: '🍾', points: 55, size: 1.8 },
+  haystack: { path: 'assets/nature/log_stack.glb', label: 'Hay Bales', icon: '🌾', points: 60, size: 3.0 },
+  pumpkin: { path: 'assets/nature/crop_pumpkin.glb', label: 'Pumpkin', icon: '🎃', points: 75, size: 2.2 },
+  portaloo: { path: 'assets/props/portapotty/scene.gltf', label: 'Portaloo', icon: '🚽', points: 240, size: 3.4 },
+  skull: { path: 'assets/spooky/skull.glb', label: 'Skull', icon: '💀', points: 90, size: 2.0 },
+  present: { path: 'assets/holiday/present-a-cube.glb', label: 'Present', icon: '🎁', points: 120, size: 2.4 },
+  snowman: { path: 'assets/holiday/snowman.glb', label: 'Snowman', icon: '⛄', points: 160, size: 3.6 },
+  fish: { path: 'assets/survival/fish-large.glb', label: 'Big Fish', icon: '🐟', points: 85, size: 2.4 },
 }

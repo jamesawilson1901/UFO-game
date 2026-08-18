@@ -80,39 +80,41 @@ class PartBin {
 }
 
 /* ── species definitions ──────────────────────────────────────────────
-   Sizes are in world units; 1 unit ≈ 1 metre. `points` is the score for
-   beaming one up, roughly tracking how hard it is to catch.            */
+   Sizes are in world units; 1 unit ≈ 1 metre. They are deliberately larger
+   than life — from the saucer's altitude a realistically-sized cow is an
+   unidentifiable speck, and the whole game is about recognising your target.
+   `points` roughly tracks how hard something is to catch.               */
 export const SPECIES = {
   cow: {
-    label: 'Cow', icon: '🐄', points: 100, size: 1.0,
+    label: 'Cow', icon: '🐄', points: 100, size: 2.6,
     body: 0xf4f1ea, patch: 0x3b3b45, snout: 0xffb3c6, horn: 0xe8dcc0,
     hasHorns: true, hasUdder: true, spots: 6, speed: 1.5, moo: 'cow-moo',
   },
   bull: {
-    label: 'Prize Bull', icon: '🐂', points: 250, size: 1.35,
+    label: 'Prize Bull', icon: '🐂', points: 250, size: 3.3,
     body: 0x6b4423, patch: 0x3d2415, snout: 0xd98fa0, horn: 0xf0e6d0,
     hasHorns: true, hasUdder: false, spots: 2, speed: 2.6, moo: 'cow-moo',
     angry: true,
   },
   calf: {
-    label: 'Calf', icon: '🐮', points: 60, size: 0.62,
+    label: 'Calf', icon: '🐮', points: 60, size: 1.7,
     body: 0xfff8e7, patch: 0xc2703d, snout: 0xffc2d1, horn: 0xe8dcc0,
     hasHorns: false, hasUdder: false, spots: 4, speed: 2.2, moo: 'cow-moo',
   },
   pig: {
-    label: 'Pig', icon: '🐖', points: 80, size: 0.72,
+    label: 'Pig', icon: '🐖', points: 80, size: 2.0,
     body: 0xffb0c4, patch: 0xff87a3, snout: 0xff7fa0, horn: 0,
     hasHorns: false, hasUdder: false, spots: 3, speed: 2.4, ears: 'floppy',
     tail: 'curly', moo: 'slime_000',
   },
   sheep: {
-    label: 'Sheep', icon: '🐑', points: 90, size: 0.75,
+    label: 'Sheep', icon: '🐑', points: 90, size: 2.1,
     body: 0xfaf7f2, patch: 0xe6e0d4, snout: 0x33313a, horn: 0xd9cbb0,
     hasHorns: false, hasUdder: false, spots: 0, speed: 2.0, fluffy: true,
     legColor: 0x33313a, moo: 'slime_002',
   },
   chicken: {
-    label: 'Chicken', icon: '🐔', points: 40, size: 0.4,
+    label: 'Chicken', icon: '🐔', points: 40, size: 1.3,
     body: 0xfffdf6, patch: 0xffffff, snout: 0xffa62b, horn: 0xe23b3b,
     hasHorns: false, hasUdder: false, spots: 0, speed: 3.4, bird: true,
     legColor: 0xffa62b, moo: 'slime_000',
@@ -312,7 +314,18 @@ export function makeCritter(kind, rng) {
  * Per-frame animation. Kept as a free function so the entity layer owns
  * state and this stays a pure "pose from numbers" routine.
  */
-export function animateCritter(c, { t, speed = 0, panic = 0, lifted = 0 }) {
+export function animateCritter(c, { t, speed = 0, panic = 0, lifted = 0, stun = 0 }) {
+  if (stun > 0) {
+    // Zapped: sits down, wobbles, legs stick out. Reads as dazed, not hurt.
+    c.root.rotation.z = Math.sin(t * 11) * 0.22 * stun
+    c.head.rotation.z = Math.sin(t * 14) * 0.5 * stun
+    c.head.rotation.x = 0.3 * stun
+    for (let i = 0; i < c.legs.length; i++) {
+      c.legs[i].rotation.x = (i < 2 ? 1 : -1) * 0.9 * stun
+    }
+    c.tail.rotation.z = Math.sin(t * 20) * 0.6 * stun
+    return
+  }
   const gait = c.def.bird ? 14 : 9
   const swing = Math.min(1, speed / 2) * (c.def.bird ? 0.9 : 0.7)
 

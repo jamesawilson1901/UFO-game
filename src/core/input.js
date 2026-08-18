@@ -8,14 +8,14 @@ const KEYMAP = {
   KeyS: 'down', ArrowDown: 'down',
   KeyA: 'left', ArrowLeft: 'left',
   KeyD: 'right', ArrowRight: 'right',
-  Space: 'beam', ShiftLeft: 'boost', ShiftRight: 'boost',
-  KeyE: 'drop', KeyQ: 'moo',
+  Space: 'beam', KeyF: 'laser', Enter: 'laser',
+  ShiftLeft: 'boost', ShiftRight: 'boost', KeyQ: 'moo',
 }
 
 export class Input {
   constructor() {
     this.move = { x: 0, y: 0 }          // -1..1, y is "forward" (screen up)
-    this.buttons = { beam: false, boost: false, drop: false, moo: false }
+    this.buttons = { beam: false, laser: false, boost: false, moo: false }
     this._justPressed = new Set()
     this._keys = new Set()
     this._stickId = null
@@ -161,7 +161,7 @@ export class Input {
       if (gp) {
         const ax = gp.axes[0] ?? 0, ay = gp.axes[1] ?? 0
         if (Math.hypot(ax, ay) > 0.18) { this.move.x = ax; this.move.y = -ay }
-        const gb = [['beam', 0], ['boost', 1], ['drop', 2], ['moo', 3]]
+        const gb = [['beam', 0], ['laser', 1], ['boost', 2], ['moo', 3]]
         for (const [act, i] of gb) {
           const down = !!gp.buttons[i]?.pressed
           if (down && !this.buttons[act]) this._press(act, this._padFor(act))
