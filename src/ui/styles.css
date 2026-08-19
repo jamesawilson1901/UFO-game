@@ -25,9 +25,9 @@
 
   /* Controls scale with the short edge so they stay thumb-sized on
      everything from a phone to a 13" tablet. */
-  --stick-size: clamp(130px, 30vmin, 220px);
-  --pad-size: clamp(64px, 14vmin, 104px);
-  --cluster: clamp(165px, 38vmin, 280px);
+  --stick-size: clamp(140px, 32vmin, 230px);
+  --pad-size: clamp(76px, 16.5vmin, 124px);
+  --cluster: clamp(195px, 44vmin, 320px);
 }
 
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -201,22 +201,33 @@ html, body {
   100% { opacity: 0; transform: translate(-50%, -175%) scale(1); }
 }
 
-/* ── virtual joystick (left) ────────────────────────────────────── */
-.stick {
+/* ── virtual joystick ───────────────────────────────────────────────
+   The whole left third of the screen is the stick. A child does not aim
+   for a small circle in the corner — they grab wherever their thumb lands,
+   so the pad teleports to the touch instead of expecting them to find it. */
+.stick-zone {
   position: absolute;
-  left: var(--pad); bottom: var(--pad-b);
-  width: var(--stick-size); height: var(--stick-size);
+  left: 0; top: 0; bottom: 0;
+  width: 36%;
   pointer-events: auto;
   touch-action: none;
 }
 .stick-pad {
-  position: absolute; inset: 0;
+  position: absolute;
+  left: var(--pad); bottom: var(--pad-b);
+  width: var(--stick-size); height: var(--stick-size);
   background: var(--img-stick-pad) center/contain no-repeat;
-  opacity: .78;
+  opacity: .5;
   display: grid; place-items: center;
-  transition: opacity .15s;
+  transition: opacity .18s;
+  will-change: transform;
 }
-.stick.active .stick-pad { opacity: 1; }
+/* While held, the pad sits under the thumb and is positioned from JS. */
+.stick-zone.active .stick-pad {
+  opacity: .92;
+  left: 0; bottom: auto; top: 0;
+  transition: opacity .12s;
+}
 .stick-nub {
   width: 46%; height: 46%;
   background: var(--img-stick-nub) center/contain no-repeat;
@@ -289,7 +300,7 @@ html, body {
 
 /* Landscape phones are short — pull the HUD in tighter. */
 @media (max-height: 460px) {
-  :root { --stick-size: clamp(96px, 30vh, 140px); --pad-size: clamp(46px, 15vh, 66px); --cluster: clamp(120px, 38vh, 180px); }
+  :root { --stick-size: clamp(104px, 32vh, 150px); --pad-size: clamp(56px, 18vh, 80px); --cluster: clamp(146px, 46vh, 210px); }
   .hud-cargo { display: none; }
 }
 

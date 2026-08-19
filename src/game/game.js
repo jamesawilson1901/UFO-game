@@ -819,11 +819,14 @@ export class Game {
   _camera(dt) {
     const u = this.ufo.pos
     // Closer and lower than a true top-down so animals stay identifiable.
-    const back = 33, up = 36
-    const lead = 0.5
+    const back = 34, up = 38
+    // Look further ahead now the saucer is quick, or you fly into scenery
+    // you never saw coming.
+    const lead = 0.42
     const want = new THREE.Vector3(u.x + this.ufo.vel.x * lead, u.y + up,
       u.z + this.ufo.vel.z * lead + back)
-    this.camRig.position.lerp(want, Math.min(1, dt * 3.4))
+    // Exponential smoothing keeps the follow identical at any frame rate.
+    this.camRig.position.lerp(want, 1 - Math.exp(-4.2 * dt))
 
     if (this.shake > 0.001) {
       this.shake = Math.max(0, this.shake - dt * 2.2)

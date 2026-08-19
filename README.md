@@ -28,12 +28,16 @@ npm run dev      # open the printed Network URL on a tablet
 
 ## Controls
 
-Landscape only — there is a thumb-stick in each bottom corner, so the game
-prompts you to rotate if the device is upright.
+Landscape only — the game prompts you to rotate if the device is upright.
+
+The joystick is the **whole left third of the screen**, not a small circle in
+the corner: a child does not aim for a target, they grab wherever their thumb
+lands, so the stick teleports to the touch. Push past its edge and the whole
+stick drags along, so you never run out of travel.
 
 | Control | Action |
 |---|---|
-| **Left stick** | Fly the saucer |
+| **Left third of the screen** | Fly the saucer — touch anywhere, the stick appears under your thumb |
 | **A** (green) | Hold to fire the tractor beam |
 | **B** (red) | LASER — vaporises objects, zaps the rival, makes animals dizzy |
 | **X** (blue) | Boost |

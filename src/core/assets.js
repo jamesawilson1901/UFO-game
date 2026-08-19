@@ -39,6 +39,31 @@ export const NATURE_PALETTE = {
   colorTan: 0xd8b98a,
 }
 
+/**
+ * The graveyard kit ships the same washed-out pastels as the nature kit —
+ * mint foliage, pale blue stone, turquoise ironwork. Repainted for a
+ * graveyard: dark pines, honest stone, black iron.
+ */
+export const GRAVEYARD_PALETTE = {
+  stone: 0x9a9a96,
+  woodDark: 0x4a382c,
+  wood: 0x6b5340,
+  metal: 0x33363a,
+  foliage: 0x2f5c3a,
+  brick: 0x7a4a42,
+  pumpkin: 0xe07b1e,
+  light: 0xffd45c,
+  wax: 0xf2ecd8,
+  gold: 0xd4af5a,
+  skin: 0xbcd6b0,
+}
+
+/** Which palette, if any, applies to a model path. */
+const PALETTE_FOR = [
+  ['/nature/', () => NATURE_PALETTE],
+  ['/graveyard/', () => GRAVEYARD_PALETTE],
+]
+
 /** Apply a name-keyed palette, cloning so cached source scenes stay clean. */
 export function applyPalette(root, palette) {
   const cache = new Map()
@@ -179,7 +204,8 @@ export class Assets {
     if (this.cache.has(path)) return this.cache.get(path)
     const p = new Promise((res, rej) => {
       this.gltf.load(url(path), (g) => {
-        if (path.includes('/nature/')) applyPalette(g.scene, NATURE_PALETTE)
+        const hit = PALETTE_FOR.find(([frag]) => path.includes(frag))
+        if (hit) applyPalette(g.scene, hit[1]())
         normalizeMaterials(g.scene)
         res(g)
       }, undefined, rej)

@@ -33,6 +33,9 @@ const beamFrag = /* glsl */`
   }
 `
 
+/** Frame-rate independent smoothing factor: reaches ~63% of the gap in 1/k s. */
+const smooth = (k, dt) => 1 - Math.exp(-k * dt)
+
 export class Ufo {
   constructor(scene) {
     this.scene = scene
@@ -46,12 +49,13 @@ export class Ufo {
     this.boost = 0
     this.boostFuel = 1
 
-    // Tuning — deliberately floaty so it feels like a hovering saucer, but
-    // responsive enough that a five-year-old can steer it.
-    this.accel = 78
-    this.maxSpeed = 30
-    this.boostMax = 52
-    this.drag = 3.0
+    /* Tuning. Quick and glidey: children steer in long sweeps rather than
+       precise nudges, so the saucer wants a high top speed and enough
+       momentum to carry through a turn without feeling twitchy. */
+    this.accel = 135
+    this.maxSpeed = 52
+    this.boostMax = 88
+    this.drag = 2.5
     this.hoverY = 23
     this.minY = 12
     this.maxY = 50
@@ -171,8 +175,10 @@ export class Ufo {
     this.pos.x += this.vel.x * dt
     this.pos.z += this.vel.z * dt
 
-    // Stay inside the playfield with a soft push-back.
-    const lim = 232
+    /* Stay inside the playfield with a soft push-back. Taken from the world
+       rather than hardcoded — this was still 232 from when the map was 480
+       across, letting the saucer fly 32 units off the edge of the terrain. */
+    const lim = world.half - 8
     for (const ax of ['x', 'z']) {
       if (this.pos[ax] > lim) { this.pos[ax] = lim; this.vel[ax] *= -0.3 }
       if (this.pos[ax] < -lim) { this.pos[ax] = -lim; this.vel[ax] *= -0.3 }
@@ -181,8 +187,11 @@ export class Ufo {
     /* ── altitude: hug the terrain, dip while beaming ───────────── */
     const ground = world.heightAt(this.pos.x, this.pos.z)
     const targetY = ground + (this.beamOn ? this.hoverY * 0.78 : this.hoverY)
+    // Exponential smoothing rather than a raw lerp factor: `dt * k` changes
+    // meaning with frame rate, which is why the same tuning felt different
+    // on a phone and a desktop.
     this.pos.y += (THREE.MathUtils.clamp(targetY, this.minY, this.maxY) - this.pos.y)
-      * Math.min(1, dt * 3.2)
+      * smooth(4.5, dt)
     this.pos.y += Math.sin(t * 1.7) * dt * 1.6      // idle bob
 
     this.group.position.copy(this.pos)
@@ -190,8 +199,8 @@ export class Ufo {
     /* ── banking ────────────────────────────────────────────────── */
     const tiltX = THREE.MathUtils.clamp(this.vel.z / this.maxSpeed, -1, 1) * 0.34
     const tiltZ = THREE.MathUtils.clamp(-this.vel.x / this.maxSpeed, -1, 1) * 0.34
-    this.tilt.x += (tiltX - this.tilt.x) * Math.min(1, dt * 5)
-    this.tilt.y += (tiltZ - this.tilt.y) * Math.min(1, dt * 5)
+    this.tilt.x += (tiltX - this.tilt.x) * smooth(6, dt)
+    this.tilt.y += (tiltZ - this.tilt.y) * smooth(6, dt)
     this.hull.rotation.x = this.tilt.x
     this.hull.rotation.z = this.tilt.y
     this.hull.rotation.y += dt * (0.7 + this.boost * 2.6)

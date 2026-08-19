@@ -25,14 +25,28 @@ export class Input {
 
   attach() {
     this.stick = document.getElementById('stick')
+    this.pad = document.getElementById('stickpad')
     this.nub = document.getElementById('nub')
     this.padEls = [...document.querySelectorAll('.pad')]
 
-    // ── analogue stick ────────────────────────────────────────────
-    const radius = () => this.stick.clientWidth * 0.32
+    /* ── analogue stick ───────────────────────────────────────────
+       The zone is the left third of the screen; the visible pad jumps to
+       wherever the thumb goes down and the vector is measured from there.
+       Resting, it sits back in the bottom-left corner so it still reads as
+       "the thing you drive with". */
+    const radius = () => this.pad.clientWidth * 0.42
 
     const setNub = (dx, dy) => {
       this.nub.style.transform = `translate(${dx}px, ${dy}px)`
+    }
+
+    const placePad = (clientX, clientY) => {
+      const zone = this.stick.getBoundingClientRect()
+      const size = this.pad.offsetWidth
+      // Keep the pad fully on screen even if the thumb lands at an edge.
+      const x = Math.max(0, Math.min(zone.width - size, clientX - zone.left - size / 2))
+      const y = Math.max(0, Math.min(zone.height - size, clientY - zone.top - size / 2))
+      this.pad.style.transform = `translate(${x}px, ${y}px)`
     }
 
     const onStickDown = (e) => {
@@ -40,28 +54,36 @@ export class Input {
       this._stickId = e.pointerId
       this.stick.setPointerCapture(e.pointerId)
       this.stick.classList.add('active')
-      this._stickOrigin = this._stickCentre(e)
-      onStickMove(e)
+      this._stickOrigin = { x: e.clientX, y: e.clientY }
+      placePad(e.clientX, e.clientY)
+      setNub(0, 0)
     }
 
     const onStickMove = (e) => {
       if (e.pointerId !== this._stickId) return
       const o = this._stickOrigin
       const r = radius()
-      let dx = e.clientX - o.x
-      let dy = e.clientY - o.y
+      const dx = e.clientX - o.x
+      const dy = e.clientY - o.y
       const len = Math.hypot(dx, dy)
       // Small dead zone stops jitter from a resting thumb.
-      const dead = r * 0.12
+      const dead = r * 0.1
       if (len < dead) { this.move.x = 0; this.move.y = 0; setNub(dx, dy); return }
+
       const clamped = Math.min(len, r)
-      const nx = (dx / len) * clamped
-      const ny = (dy / len) * clamped
-      setNub(nx, ny)
+      setNub((dx / len) * clamped, (dy / len) * clamped)
       // Re-normalise past the dead zone so the first responsive pixel is 0.
       const mag = (clamped - dead) / (r - dead)
       this.move.x = (dx / len) * mag
       this.move.y = (-dy / len) * mag
+
+      /* Dragging beyond the pad drags the whole stick along, so a child who
+         keeps pushing never runs out of travel and never loses the stick. */
+      if (len > r) {
+        o.x += dx - (dx / len) * r
+        o.y += dy - (dy / len) * r
+        placePad(o.x, o.y)
+      }
     }
 
     const onStickUp = (e) => {
@@ -70,6 +92,7 @@ export class Input {
       this.stick.classList.remove('active')
       this.move.x = 0; this.move.y = 0
       setNub(0, 0)
+      this.pad.style.transform = ''
     }
 
     this.stick.addEventListener('pointerdown', onStickDown)
@@ -116,16 +139,6 @@ export class Input {
 
   _padFor(act) { return this.padEls.find((p) => p.dataset.act === act) }
 
-  _stickCentre(e) {
-    // Anchor to where the thumb landed, not the pad centre — much nicer on
-    // a tablet where you never look at your hands.
-    const r = this.stick.getBoundingClientRect()
-    const cx = r.left + r.width / 2
-    const cy = r.top + r.height / 2
-    const dist = Math.hypot(e.clientX - cx, e.clientY - cy)
-    return dist < r.width * 0.28 ? { x: cx, y: cy } : { x: e.clientX, y: e.clientY }
-  }
-
   _press(act, el) {
     if (!this.buttons[act]) this._justPressed.add(act)
     this.buttons[act] = true
@@ -143,6 +156,9 @@ export class Input {
     this._keys.clear()
     this.move.x = 0; this.move.y = 0
     if (this.nub) this.nub.style.transform = 'translate(0,0)'
+    if (this.pad) this.pad.style.transform = ''
+    this.stick?.classList.remove('active')
+    this._stickId = null
   }
 
   /** Merge keyboard arrows + gamepad stick into the analogue vector. */
