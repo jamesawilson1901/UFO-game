@@ -149,7 +149,12 @@ async function boot() {
   watchOrientation(game)
 
   /* ── round flow ─────────────────────────────────────────────── */
+  const AUTO_NEXT_SECONDS = 10
+  let resultsTimer = null
+  const clearResultsTimer = () => { if (resultsTimer) { clearInterval(resultsTimer); resultsTimer = null } }
+
   const startRound = async () => {
+    clearResultsTimer()
     const theme = game.pickTheme()
     $('introicon').textContent = theme.icon
     $('introname').textContent = theme.name
@@ -207,8 +212,31 @@ async function boot() {
 
     $('hud').classList.add('hidden')
     $('results').classList.remove('hidden')
+
+    let remaining = AUTO_NEXT_SECONDS
+    $('nextcountdown').textContent = `Next world in ${remaining}s…`
+    clearResultsTimer()
+    resultsTimer = setInterval(() => {
+      remaining -= 1
+      if (remaining <= 0) {
+        clearResultsTimer()
+        startRound()
+      } else {
+        $('nextcountdown').textContent = `Next world in ${remaining}s…`
+      }
+    }, 1000)
   }
   $('againbtn').addEventListener('click', () => startRound())
+
+  const goToMenu = () => {
+    clearResultsTimer()
+    $('results').classList.add('hidden')
+    $('hud').classList.add('hidden')
+    const best = Number(localStorage.getItem(BEST_KEY) || 0)
+    if (best > 0) $('besthint').textContent = `Best score: ${best.toLocaleString()}`
+    $('start').classList.remove('hidden')
+  }
+  $('exitbtn').addEventListener('click', () => { audio.unlock(); goToMenu() })
 
   clearInterval(tipTimer)
   bar.style.width = '100%'
