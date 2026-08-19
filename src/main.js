@@ -46,6 +46,89 @@ const bestByWorld = () => {
   try { return JSON.parse(localStorage.getItem(BEST_BY_WORLD) || '{}') } catch { return {} }
 }
 
+/**
+ * Registers the service worker and wires the offline download.
+ *
+ * The shell is precached automatically so the game always launches, but the
+ * ~50 MB of worlds is only fetched when the player asks for it — silently
+ * pulling that over mobile data would be rude.
+ */
+async function setupOffline() {
+  const btn = $('offlinebtn')
+  const bar = $('offlinebar')
+  const prog = $('offlineprog')
+  const msg = $('offlinemsg')
+  if (!('serviceWorker' in navigator)) {
+    msg.textContent = 'Offline play needs a modern browser.'
+    return
+  }
+  let reg
+  try {
+    reg = await navigator.serviceWorker.register(url('sw.js'), { scope: new URL(url('.')).pathname })
+  } catch (e) {
+    msg.textContent = 'Offline play unavailable here.'
+    return
+  }
+  await navigator.serviceWorker.ready
+
+  let sizeText = ''
+  try {
+    const m = await (await fetch(url('asset-manifest.json'))).json()
+    sizeText = ` (${Math.round(m.totalBytes / 1048576)} MB)`
+  } catch {}
+
+  // Already downloaded? Estimate from the Cache Storage entry count.
+  const alreadyDone = await (async () => {
+    try {
+      const m = await (await fetch(url('asset-manifest.json'))).json()
+      const keys = await caches.keys()
+      for (const k of keys) {
+        const c = await caches.open(k)
+        if ((await c.keys()).length >= m.shell.length + m.assets.length - 5) return true
+      }
+    } catch {}
+    return false
+  })()
+
+  btn.classList.remove('hidden')
+  if (alreadyDone) {
+    btn.textContent = '✅ READY TO PLAY OFFLINE'
+    btn.classList.add('done')
+    msg.textContent = 'Add it to your home screen and play with no internet.'
+    return
+  }
+  btn.textContent = `📥 MAKE IT WORK OFFLINE${sizeText}`
+
+  navigator.serviceWorker.addEventListener('message', (e) => {
+    const d = e.data ?? {}
+    if (d.type === 'PRECACHE_PROGRESS') {
+      const pct = Math.round((d.done / d.total) * 100)
+      prog.style.width = `${pct}%`
+      msg.textContent = `Downloading… ${pct}%  (${d.done} of ${d.total})`
+    } else if (d.type === 'PRECACHE_DONE') {
+      prog.style.width = '100%'
+      btn.textContent = '✅ READY TO PLAY OFFLINE'
+      btn.classList.add('done')
+      btn.disabled = false
+      msg.textContent = 'Done! Add it to your home screen and play with no internet.'
+    } else if (d.type === 'PRECACHE_FAILED') {
+      btn.disabled = false
+      btn.textContent = '📥 TRY AGAIN'
+      msg.textContent = 'Download failed — check your connection.'
+    }
+  })
+
+  btn.addEventListener('click', () => {
+    const sw = navigator.serviceWorker.controller ?? reg.active
+    if (!sw) { msg.textContent = 'Reload the page, then try again.'; return }
+    btn.disabled = true
+    btn.textContent = '⏳ DOWNLOADING…'
+    bar.classList.remove('hidden')
+    msg.textContent = 'Starting…'
+    sw.postMessage({ type: 'PRECACHE_ALL' })
+  })
+}
+
 async function boot() {
   paintControlSprites()
 
@@ -94,6 +177,7 @@ async function boot() {
     $('intro').classList.add('hidden')
     $('hud').classList.remove('hidden')
     game.pause(false)
+    game.countdownIn()
   }
   $('gobtn').addEventListener('click', go)
 
@@ -106,6 +190,7 @@ async function boot() {
     const isBest = r.score > prev
     if (isBest) { per[r.theme.id] = r.score; localStorage.setItem(BEST_BY_WORLD, JSON.stringify(per)) }
 
+    audio.play(isBest ? 'v_highscore' : 'v_congrats', { volume: 0.95 })
     $('finalscore').textContent = r.score.toLocaleString()
     $('finalrank').textContent = r.rank.name
     $('finalbest').textContent = isBest
@@ -131,6 +216,7 @@ async function boot() {
   if (best > 0) $('besthint').textContent = `Best score: ${best.toLocaleString()}`
   $('boot').classList.add('hidden')
   $('start').classList.remove('hidden')
+  setupOffline().catch((e) => console.warn('[offline]', e))
 
   $('playbtn').addEventListener('click', () => { audio.unlock(); startRound() })
 

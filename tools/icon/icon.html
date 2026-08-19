@@ -1,0 +1,81 @@
+<!doctype html><meta charset="utf-8">
+<style>
+  html,body{margin:0;padding:0;background:transparent}
+  canvas{display:block}
+</style>
+<canvas id="c" width="512" height="512"></canvas>
+<script>
+/* The app icon, drawn rather than sourced so it scales cleanly and matches
+   the game's palette. `safe` insets the artwork for maskable icons, which
+   Android crops to a circle. */
+const params = new URLSearchParams(location.search)
+const MASKABLE = params.get('maskable') === '1'
+const c = document.getElementById('c')
+const x = c.getContext('2d')
+const S = 512
+const pad = MASKABLE ? 0.14 : 0.02          // maskable needs a 20% safe zone
+const k = 1 - pad * 2
+const T = (v) => v * k + S * pad            // map 0..512 into the safe area
+
+// ── background ──
+if (MASKABLE) { x.fillStyle = '#0b1026'; x.fillRect(0, 0, S, S) }
+else {
+  const r = 96
+  x.beginPath(); x.roundRect(0, 0, S, S, r); x.clip()
+  x.fillStyle = '#0b1026'; x.fillRect(0, 0, S, S)
+}
+const sky = x.createRadialGradient(S/2, S*0.36, 20, S/2, S*0.36, S*0.72)
+sky.addColorStop(0, '#33307a'); sky.addColorStop(1, '#0b1026')
+x.fillStyle = sky; x.fillRect(0, 0, S, S)
+
+// stars
+x.fillStyle = '#fff6e5'
+for (const [sx, sy, sr] of [[70,70,4],[420,96,5],[130,180,3],[452,240,3],[64,300,3],[380,60,3],[250,52,3]]) {
+  x.globalAlpha = 0.8; x.beginPath(); x.arc(T(sx), T(sy), sr, 0, 7); x.fill()
+}
+x.globalAlpha = 1
+
+// ── tractor beam ──
+const beam = x.createLinearGradient(0, T(250), 0, T(470))
+beam.addColorStop(0, 'rgba(157,255,190,.85)')
+beam.addColorStop(1, 'rgba(157,255,190,0)')
+x.fillStyle = beam
+x.beginPath()
+x.moveTo(T(212), T(258)); x.lineTo(T(300), T(258))
+x.lineTo(T(392), T(470)); x.lineTo(T(120), T(470))
+x.closePath(); x.fill()
+
+// ── cow in the beam ──
+const cw = 108 * k, ch = 62 * k
+const cx = T(256) - cw / 2, cy = T(392) - ch / 2
+x.fillStyle = '#f7f4ec'
+x.beginPath(); x.roundRect(cx, cy, cw, ch, 26 * k); x.fill()
+x.fillStyle = '#2b2b33'
+x.beginPath(); x.ellipse(cx + cw*0.32, cy + ch*0.40, 15*k, 12*k, 0, 0, 7); x.fill()
+x.beginPath(); x.ellipse(cx + cw*0.70, cy + ch*0.62, 12*k, 10*k, 0, 0, 7); x.fill()
+// legs
+for (const lx of [0.22, 0.44, 0.62, 0.82]) {
+  x.fillRect(cx + cw*lx - 5*k, cy + ch - 2, 10*k, 20*k)
+}
+// head + snout
+x.fillStyle = '#f7f4ec'
+x.beginPath(); x.roundRect(cx + cw - 14*k, cy - 6*k, 40*k, 40*k, 12*k); x.fill()
+x.fillStyle = '#ffb3c6'
+x.beginPath(); x.roundRect(cx + cw + 6*k, cy + 8*k, 22*k, 18*k, 8*k); x.fill()
+
+// ── saucer ──
+x.fillStyle = '#7fb8d8'
+x.beginPath(); x.ellipse(T(256), T(250), 168*k, 46*k, 0, 0, 7); x.fill()
+x.fillStyle = '#cfe6f5'
+x.beginPath(); x.ellipse(T(256), T(238), 168*k, 42*k, 0, 0, 7); x.fill()
+const dome = x.createLinearGradient(0, T(170), 0, T(232))
+dome.addColorStop(0, '#b9ffd0'); dome.addColorStop(1, '#4fc98a')
+x.fillStyle = dome
+x.beginPath(); x.ellipse(T(256), T(226), 74*k, 66*k, 0, Math.PI, 0); x.fill()
+// running lights
+for (const lx of [-124, -62, 0, 62, 124]) {
+  x.fillStyle = '#ffd23f'
+  x.beginPath(); x.arc(T(256 + lx), T(256), 12*k, 0, 7); x.fill()
+}
+document.title = 'ready'
+</script>

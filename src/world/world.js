@@ -49,6 +49,15 @@ export class World {
         if (o) this.models.set(`farm:${n}`, o)
       }))
     }
+    // Asset Forge kits (the space kit) write sRGB; Blender kits write linear.
+    if (theme.objModels?.length) {
+      step('Unpacking the kit…')
+      await Promise.all(theme.objModels.map(async ({ dir, name, linear = true }) => {
+        const o = await assets.objMtl(`assets/${dir}/${name}.obj`, `assets/${dir}/${name}.mtl`,
+          { linearColors: linear })
+        if (o) this.models.set(`${dir}:${name}`, o)
+      }))
+    }
     for (const k of theme.extraModels ?? []) {
       if (k === 'tractor') {
         const g = await assets.glb('assets/props/tractor.glb')

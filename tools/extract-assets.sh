@@ -8,12 +8,15 @@ set -euo pipefail
 
 UP="${UP:-/root/.claude/uploads/4ab8e5b6-1b15-522d-ba8e-74e80c0ec085}"
 MG="${MG:-/workspace/my-games}"
+# A public mirror of Kenney's full catalogue (CC0).
+KN="${KN:-/workspace/etdofresh/kenney.nl}"
 OUT="$(cd "$(dirname "$0")/.." && pwd)/public/assets"
 
 say() { printf '\n\033[1;36m▸ %s\033[0m\n' "$*"; }
 have() { [ -e "$1" ] || { echo "  !! missing source: $1" >&2; return 1; }; }
 
-mkdir -p "$OUT"/{nature,farm,pirate,town,food,chars,ufo,props,audio/sfx,audio/music,ui,sky}
+mkdir -p "$OUT"/{nature,farm,pirate,town,food,chars,ufo,props,audio/sfx,audio/music,audio/voice,ui,sky}
+mkdir -p "$OUT"/{holiday,castle,survival,spooky,graveyard,cars,space}
 
 # ── nature: 329 self-contained flat-shaded GLBs (Kenney Nature Kit, CC0) ──────
 say "nature kit"
@@ -58,6 +61,40 @@ say "skeletons (spooky world NPCs)"
 have "$MG/Kenny/KayKit_Skeletons_1.1_FREE.zip" &&
   unzip -o -j -q "$MG/Kenny/KayKit_Skeletons_1.1_FREE.zip" \
     'KayKit_Skeletons_1.1_FREE/characters/gltf/*' -d "$OUT/chars"
+
+# ── extra kits from the Kenney mirror ───────────────────────────────────────
+say "graveyard kit (spooky world)"
+if [ -d "$KN/kenney_graveyardkit_3" ]; then
+  find "$KN/kenney_graveyardkit_3" -name '*.glb' -exec cp -f {} "$OUT/graveyard/" \; 2>/dev/null || {
+    mkdir -p "$OUT/graveyard"
+    find "$KN/kenney_graveyardkit_3" -name '*.glb' -exec cp -f {} "$OUT/graveyard/" \;
+  }
+  find "$KN/kenney_graveyardkit_3" -path '*GLB*' -name 'colormap.png' -exec \
+    sh -c 'mkdir -p "$1/Textures"; cp -f "$2" "$1/Textures/"' _ "$OUT/graveyard" {} \; 2>/dev/null
+fi
+
+say "car kit (city world + real ambulances)"
+mkdir -p "$OUT/cars"
+find "$KN/carkit_v1.4" -name '*.glb' -exec cp -f {} "$OUT/cars/" \; 2>/dev/null || true
+find "$KN/carkit_v1.4" -path '*GLB*' -name 'colormap.png' -exec \
+  sh -c 'mkdir -p "$1/Textures"; cp -f "$2" "$1/Textures/"' _ "$OUT/cars" {} \; 2>/dev/null
+
+say "space kit (moon base world)"
+mkdir -p "$OUT/space"
+find "$KN/space-kit-1.0/Models" -name '*.obj' -exec cp -f {} "$OUT/space/" \; 2>/dev/null || true
+find "$KN/space-kit-1.0/Models" -name '*.mtl' -exec cp -f {} "$OUT/space/" \; 2>/dev/null || true
+# The OBJs reference their textures as Textures/<name>.png, so the folder
+# structure has to be preserved rather than flattened.
+mkdir -p "$OUT/space/Textures"
+find "$KN/space-kit-1.0/Models" -path '*Textures*' -name '*.png' \
+  -exec cp -f {} "$OUT/space/Textures/" \; 2>/dev/null || true
+
+say "voice-over lines"
+mkdir -p "$OUT/audio/voice"
+for v in go ready set congratulations you_win level_up power_up new_highscore \
+         hurry_up time_over game_over 1 2 3; do
+  cp -f "$KN/kenney_voiceoverpack/Male/$v.ogg" "$OUT/audio/voice/$v.ogg" 2>/dev/null || true
+done
 
 # ── palette atlases ─────────────────────────────────────────────────────────
 # Every Kenney kit ships its OWN colormap.png and references it by relative

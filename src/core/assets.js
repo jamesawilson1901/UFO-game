@@ -124,7 +124,7 @@ export function boundsOf(obj) {
  * out roughly three times too dark — a barn red of 0.2 renders near-black.
  * Swap to MeshStandardMaterial (matching the GLB kits) and correct the space.
  */
-export function convertMtlMaterials(root) {
+export function convertMtlMaterials(root, { linearColors = true } = {}) {
   const seen = new Map()
   root.traverse((o) => {
     if (!o.isMesh) return
@@ -132,7 +132,8 @@ export function convertMtlMaterials(root) {
     const next = mats.map((m) => {
       if (!m) return m
       if (seen.has(m)) return seen.get(m)
-      const color = (m.color ?? new THREE.Color(0xffffff)).clone().convertLinearToSRGB()
+      const base = (m.color ?? new THREE.Color(0xffffff)).clone()
+      const color = linearColors ? base.convertLinearToSRGB() : base
       const std = new THREE.MeshStandardMaterial({
         name: m.name,
         color,
@@ -195,7 +196,12 @@ export class Assets {
     return g.scene.clone(true)
   }
 
-  async objMtl(objPath, mtlPath) {
+  /**
+   * @param {object} opts  `linearColors` false for kits exported by Asset
+   *   Forge, which writes sRGB directly; Blender writes linear and needs the
+   *   conversion. Guessing wrong makes a kit either muddy or bleached.
+   */
+  async objMtl(objPath, mtlPath, opts = {}) {
     const key = objPath
     if (this.cache.has(key)) return this.cache.get(key)
     const p = (async () => {
@@ -209,7 +215,7 @@ export class Assets {
       mats.preload()
       const o = await new Promise((res, rej) =>
         obj.setMaterials(mats).setPath(url(dir)).load(objPath.slice(dir.length), res, undefined, rej))
-      convertMtlMaterials(o)
+      convertMtlMaterials(o, opts)
       normalizeMaterials(o)
       return o
     })().then((o) => { this._tick(); return o })

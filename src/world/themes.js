@@ -20,6 +20,8 @@ const H = (f) => `assets/holiday/${f}.glb`
 const C = (f) => `assets/castle/${f}.glb`
 const S = (f) => `assets/survival/${f}.glb`
 const K = (f) => `assets/spooky/${f}.glb`
+const G = (f) => `assets/graveyard/${f}.glb`
+const CAR = (f) => `assets/cars/${f}.glb`
 const FARM = (n) => `farm:${n}`
 
 /* Shared scatter sets, so themes read as recipes rather than lists. */
@@ -320,7 +322,8 @@ export const THEMES = [
         { height: 8, jitter: 0.3, minR: 96 })
       w.scatter(b, [T('lantern')], 0, 0, WORLD_HALF - 30, 70, { height: 4.2, minR: 100 })
       w.scatter(b, [T('hedge')], 0, 0, WORLD_HALF - 25, 90, { width: 3, minR: 100 })
-      w.scatter(b, [T('stall'), T('cart')], 0, 0, WORLD_HALF - 40, 40, { height: 3, minR: 96 })
+      w.scatter(b, [T('stall')], 0, 0, WORLD_HALF - 40, 20, { width: 4, minR: 96 })
+      w.scatter(b, [T('cart')], 0, 0, WORLD_HALF - 40, 20, { width: 3, minR: 96 })
       w.scatter(b, GRASS, 0, 0, WORLD_HALF - 20, 1100, { height: 1.0, jitter: 0.4 })
       w.scatter(b, FLOWERS, 0, 0, WORLD_HALF - 20, 520, { height: 0.9, jitter: 0.3 })
       w.scatter(b, ROCKS_SMALL, 0, 0, WORLD_HALF - 20, 110, { height: 0.6, jitter: 0.5, tilt: 0.12 })
@@ -328,114 +331,306 @@ export const THEMES = [
   },
 
   /* ══════════════════════════════════════════════════════════════════
-     SPOOKY — dark but never grim. Everything cheerful from the nature kit
-     is repainted; bright autumn trees in a graveyard read as a park.
+     SPOOKY — Kenney's graveyard kit, which ships actual ghosts, zombies
+     and vampires. Dark, but lit brightly enough to stay readable.
      ═════════════════════════════════════════════════════════════════ */
   {
     id: 'spooky',
     name: 'Boo Hill Graveyard',
     icon: '👻',
-    blurb: 'Spooky! Beam up the skeletons.',
-    ground: 0x3f4a3e,
-    sand: 0x4c4a44,
-    rock: 0x5e5e5a,
+    blurb: 'Ghosts! Zombies! Beam them all!',
+    ground: 0x44513f,
+    sand: 0x50503f,
+    rock: 0x63635e,
     sky: null,
     skyColor: 0x241f3a,
-    fog: { color: 0x2f2a4a, near: 150, far: 380 },
-    sun: { color: 0xb8d8ff, intensity: 1.35 },
-    hemi: { sky: 0x8878c8, ground: 0x242a22, intensity: 1.1 },
-    // Lifted so a five-year-old can still tell a cow from a gravestone.
-    ambient: 0.7,
+    fog: { color: 0x322c4e, near: 160, far: 400 },
+    sun: { color: 0xc8e0ff, intensity: 1.5 },
+    hemi: { sky: 0x9a86e0, ground: 0x2a3226, intensity: 1.2 },
+    ambient: 0.75,
     music: 'assets/audio/music/wilds.ogg',
-    critters: { cow: 22, sheep: 16, chicken: 20, pig: 14 },
-    npcs: ['skeleton', 'skeleton', 'skeleton', 'skelemage', 'ghoul'],
-    npcCount: 30,
-    loot: ['pumpkin', 'chest', 'barrel', 'cake', 'skull'],
+    critters: { cow: 20, sheep: 14, chicken: 18, pig: 12 },
+    npcs: ['skeleton', 'skelemage', 'ghoul'],
+    npcCount: 20,
+    loot: ['ghost', 'zombie', 'vampire', 'pumpkincarved', 'coffin', 'cake', 'chest'],
     models: [
-      K('tomb-01'), K('tomb-02'), K('tomb-03'), K('iron-fence'), K('iron-gate'),
-      K('iron-pillar'), K('skull'), K('bone'), K('candle'), K('candlestick'),
-      K('dead-flower'), K('dead-grass'), K('dark-trunk-block'), K('red-leaves-block'),
-      K('stone-table'), K('stone-chair'), K('ritual-book'),
-      N('tree_thin'), N('tree_tall'), N('tree_default'), N('stump_old'), N('log'),
-      N('mushroom_red'), N('mushroom_redGroup'), N('rock_tallA'), N('stone_tallC'),
-      N('statue_obelisk'), N('statue_head'), N('statue_column'),
-      N('crop_pumpkin'), N('campfire_stones'), N('campfire_logs'), N('grass_leafs'),
+      G('gravestoneCross'), G('gravestoneRound'), G('gravestoneFlat'), G('gravestoneWide'),
+      G('gravestoneBevel'), G('gravestoneDecorative'), G('gravestoneRoof'), G('gravestoneBroken'),
+      G('crypt'), G('altarStone'), G('altarWood'), G('crossColumn'), G('crossWood'),
+      G('ironFence'), G('ironFenceCurve'), G('ironFenceBorder'), G('ironFenceBorderColumn'),
+      G('ironFenceDamaged'), G('fenceGate'), G('brickWall'), G('brickWallCurve'),
+      G('stoneWall'), G('stoneWallColumn'), G('stoneWallDamaged'),
+      G('lightpostSingle'), G('lightpostDouble'), G('lanternCandle'), G('fireBasket'),
+      G('pine'), G('pineCrooked'), G('trunk'), G('trunkLong'), G('rocks'), G('rocksTall'),
+      G('bench'), G('benchDamaged'), G('grave'), G('graveBorder'), G('shovelDirt'),
+      G('pillarObelisk'), G('pillarLarge'), G('debris'), G('debrisWood'), G('urn'),
+      G('pumpkin'), G('pumpkinTall'), G('road'), G('detailBowl'), G('detailChalice'),
     ],
 
     build(w, b) {
       const rng = w.rng
-      /* The nature kit is relentlessly cheerful — spring greens and bright
-         autumn oranges. Repaint the pieces this world borrows so the whole
-         graveyard reads as one place. */
-      const DEAD = {
-        tree_thin: 0x3a3348, tree_tall: 0x322c40, tree_default: 0x2e2a3c,
-        stump_old: 0x4a3f38, log: 0x4a3f38,
-        rock_tallA: 0x585a60, stone_tallC: 0x53555c,
-        statue_obelisk: 0x6a6c74, statue_head: 0x6a6c74, statue_column: 0x64666e,
-        grass_leafs: 0x4a5442, crop_pumpkin: 0xc9701f,
-        mushroom_red: 0x8c3b4a, mushroom_redGroup: 0x8c3b4a,
-      }
-      for (const [name, color] of Object.entries(DEAD)) {
-        const src = w.models.get(N(name))
-        if (src) w.models.set(`dead:${name}`, w.repaint(src.clone(true), color))
-      }
-      const D = (n) => `dead:${n}`
+      const STONES = [G('gravestoneCross'), G('gravestoneRound'), G('gravestoneFlat'),
+        G('gravestoneWide'), G('gravestoneBevel'), G('gravestoneDecorative'),
+        G('gravestoneRoof'), G('gravestoneBroken')]
 
-      // Grave plots — the defining feature. Big enough to read from the air.
+      // Six walled plots ringing a central crypt.
       for (let plot = 0; plot < 6; plot++) {
         const a = (plot / 6) * Math.PI * 2
-        const ox = Math.cos(a) * 105, oz = Math.sin(a) * 105
+        const ox = Math.cos(a) * 108, oz = Math.sin(a) * 108
         for (let r = 0; r < 4; r++) {
           for (let c = 0; c < 4; c++) {
-            w.put(b, rng.pick([K('tomb-01'), K('tomb-02'), K('tomb-03')]),
-              ox + (c - 1.5) * 11, oz + (r - 1.5) * 11,
-              { height: 5, rotY: -a + rng.range(-0.12, 0.12) })
+            const gx = ox + (c - 1.5) * 12, gz = oz + (r - 1.5) * 12
+            w.put(b, rng.pick(STONES), gx, gz, { height: 4.4, rotY: -a + rng.range(-0.1, 0.1) })
+            if (rng.chance(0.4)) w.put(b, G('grave'), gx, gz + 3, { width: 4, rotY: -a })
           }
         }
-        w.fenceRect(b, K('iron-fence'), ox, oz, 54, 54, 4.4, { height: 3.4 })
-        for (const [dx, dz] of [[-27, -27], [27, -27], [-27, 27], [27, 27]]) {
-          w.put(b, K('iron-pillar'), ox + dx, oz + dz, { height: 4.6 })
+        w.fenceRect(b, G('ironFence'), ox, oz, 58, 58, 4.6, { height: 3.6 })
+        for (const [dx, dz] of [[-29, -29], [29, -29], [-29, 29], [29, 29]]) {
+          w.put(b, G('ironFenceBorderColumn'), ox + dx, oz + dz, { height: 4.8 })
         }
+        w.put(b, G('lightpostDouble'), ox + 34, oz, { height: 8 })
         w.mark('Grave Plot', ox, oz, 'zone')
       }
 
-      // A ritual circle, because a seven-year-old will go there first.
-      w.put(b, K('stone-table'), 0, 0, { height: 3 })
-      w.put(b, K('ritual-book'), 0, 0, { height: 0.8, yOff: 3 })
+      // The crypt and its altar, dead centre.
+      w.put(b, G('crypt'), 0, 0, { height: 14 })
+      w.put(b, G('altarStone'), 0, 34, { height: 3 })
       for (let i = 0; i < 8; i++) {
         const a = (i / 8) * Math.PI * 2
-        w.put(b, K('candlestick'), Math.cos(a) * 14, Math.sin(a) * 14, { height: 3.2 })
-        w.put(b, K('stone-chair'), Math.cos(a) * 24, Math.sin(a) * 24, { height: 3, rotY: -a })
+        w.put(b, G('lanternCandle'), Math.cos(a) * 13, 34 + Math.sin(a) * 13, { height: 2.4 })
+        w.put(b, G('fireBasket'), Math.cos(a) * 22, 34 + Math.sin(a) * 22, { height: 3.4 })
       }
-      w.put(b, D('statue_obelisk'), 0, -46, { height: 20 })
-      w.mark('The Ritual Circle', 0, 0, 'landmark')
-      w.mark('The Black Obelisk', 0, -46, 'landmark')
+      w.put(b, G('pillarObelisk'), 0, -44, { height: 18 })
+      w.mark('The Crypt', 0, 0, 'landmark')
+      w.mark('The Altar', 0, 34, 'landmark')
 
-      w.scatter(b, [D('tree_thin'), D('tree_tall'), D('tree_default'), K('dark-trunk-block')],
-        0, 0, WORLD_HALF - 25, 200, { height: 13, jitter: 0.35, tilt: 0.07 })
-      // red-leaves-block is a voxel canopy piece; scattered on the ground it
-      // just reads as a rug, so it sits on top of the dead trunks instead.
-      for (let i = 0; i < 40; i++) {
-        const spot = w.randomSpot(rng, { radius: WORLD_HALF - 30 })
-        if (!spot) continue
-        w.put(b, K('dark-trunk-block'), spot.x, spot.z, { height: 9 })
-        w.put(b, K('red-leaves-block'), spot.x, spot.z, { height: 5, yOff: 8 })
+      w.scatter(b, [G('pine'), G('pineCrooked')], 0, 0, WORLD_HALF - 25, 190,
+        { height: 13, jitter: 0.35, tilt: 0.05 })
+      w.scatter(b, [G('trunk'), G('trunkLong')], 0, 0, WORLD_HALF - 25, 70,
+        { height: 8, jitter: 0.4, tilt: 0.12 })
+      w.scatter(b, STONES, 0, 0, WORLD_HALF - 25, 120, { height: 4, jitter: 0.2, tilt: 0.08 })
+      w.scatter(b, [G('rocks'), G('rocksTall'), G('debris'), G('debrisWood')],
+        0, 0, WORLD_HALF - 25, 140, { height: 2.4, jitter: 0.5, tilt: 0.12 })
+      w.scatter(b, [G('bench'), G('benchDamaged')], 0, 0, WORLD_HALF - 30, 50, { height: 2 })
+      w.scatter(b, [G('lightpostSingle')], 0, 0, WORLD_HALF - 30, 60, { height: 7 })
+      w.scatter(b, [G('urn'), G('detailBowl'), G('detailChalice')], 0, 0, WORLD_HALF - 30, 80,
+        { height: 1.4 })
+      w.scatter(b, [G('pumpkin'), G('pumpkinTall')], 0, 0, WORLD_HALF - 25, 130,
+        { height: 2, jitter: 0.3 })
+      w.scatter(b, [G('crossWood'), G('crossColumn')], 0, 0, WORLD_HALF - 25, 70, { height: 4 })
+      w.scatter(b, [G('shovelDirt')], 0, 0, WORLD_HALF - 30, 40, { height: 2, tilt: 0.2 })
+      w.scatter(b, [G('stoneWall'), G('stoneWallDamaged'), G('brickWall')],
+        0, 0, WORLD_HALF - 30, 90, { height: 3.4 })
+    },
+  },
+
+  /* ══════════════════════════════════════════════════════════════════
+     MOON BASE — a UFO game needs somewhere in space. Astronauts and
+     aliens instead of livestock; craters instead of fields.
+     ═════════════════════════════════════════════════════════════════ */
+  {
+    id: 'moon',
+    name: 'Planet Mooo',
+    icon: '🚀',
+    blurb: 'Astronauts, rockets and space cows!',
+    /* Kenney's space kit is Mars-toned — rust-orange rocks and ore. Painting
+       the ground grey fought it, so the planet is red and the kit belongs. */
+    ground: 0xa9613f,
+    sand: 0xc07a4e,
+    rock: 0x7d4630,
+    sky: null,
+    skyColor: 0x1a0e18,
+    fog: { color: 0x3a1e20, near: 200, far: 470 },
+    sun: { color: 0xfff0e0, intensity: 2.7 },
+    hemi: { sky: 0xd09070, ground: 0x4a2a20, intensity: 1.1 },
+    ambient: 0.55,
+    music: 'assets/audio/music/medical.ogg',
+    critters: { cow: 20, chicken: 16, sheep: 12, pig: 10 },
+    npcs: ['astronaut', 'astronaut', 'spaceman', 'wizard'],
+    npcCount: 24,
+    loot: ['spacebarrel', 'meteor', 'chest', 'cake', 'pizza', 'cannonball'],
+    // The space kit is OBJ+MTL, and Asset Forge writes sRGB rather than linear.
+    objModels: ['alien', 'astronaut', 'robot', 'rocksTall', 'rocksSmall', 'rocks',
+      'rocksOre', 'rocksSmallOre', 'rocksTallOre', 'crater', 'craterLarge',
+      'meteorFull', 'meteorHalf', 'meteorFullRound', 'barrel', 'barrelLarge',
+      'spaceCraft1', 'spaceCraft2', 'spaceCraft3', 'spaceCraft4', 'spaceCraft5',
+      'spaceCraftStand', 'station', 'stationLarge', 'satelliteDish', 'satelliteDishLarge',
+      'satelliteDishAntenna', 'buildingOpen', 'buildingCorner', 'buildingCorridor',
+      'metalFence', 'metalFenceDouble', 'metalTile', 'metalTileLarge', 'pipeStraight',
+      'pipeCorner', 'pipeStand', 'console', 'consoleScreen', 'stairs', 'portal',
+      'groundTile', 'groundTileRough', 'frameHigh', 'frameLow'
+    ].map((name) => ({ dir: 'space', name, linear: false })),
+    models: [],
+
+    build(w, b) {
+      const rng = w.rng
+      const S = (n) => `space:${n}`
+
+      // The base: a landing pad ringed by modules and dishes.
+      for (let ix = -3; ix <= 3; ix++) {
+        for (let iz = -3; iz <= 3; iz++) {
+          w.put(b, S(rng.chance(0.7) ? 'metalTile' : 'metalTileLarge'),
+            ix * 9, iz * 9, { width: 9, rotY: 0 })
+        }
       }
-      w.scatter(b, [K('skull'), K('bone')], 0, 0, WORLD_HALF - 25, 150, { height: 1.2, tilt: 0.4 })
-      w.scatter(b, [K('candle')], 0, 0, WORLD_HALF - 30, 110, { height: 1.3 })
-      w.scatter(b, [K('dead-flower'), K('dead-grass')], 0, 0, WORLD_HALF - 20, 600,
-        { height: 1.1, jitter: 0.4 })
-      w.scatter(b, [D('mushroom_red'), D('mushroom_redGroup')], 0, 0, WORLD_HALF - 25, 120,
-        { height: 1.8, jitter: 0.4 })
-      w.scatter(b, [D('rock_tallA'), D('stone_tallC'), D('statue_head'), D('statue_column')],
-        0, 0, WORLD_HALF - 25, 110, { height: 4.4, jitter: 0.5, tilt: 0.1 })
-      w.scatter(b, [D('crop_pumpkin')], 0, 0, WORLD_HALF - 30, 100, { height: 1.8, jitter: 0.3 })
-      w.scatter(b, [D('stump_old'), D('log')], 0, 0, WORLD_HALF - 25, 80, { height: 2, jitter: 0.3 })
-      w.scatter(b, [D('grass_leafs')], 0, 0, WORLD_HALF - 20, 400, { height: 1.1, jitter: 0.4 })
-      for (const [x, z] of [[-90, 110], [100, -100], [60, 130], [-120, -60]]) {
-        w.put(b, N('campfire_stones'), x, z, { height: 1.1 })
-        w.put(b, N('campfire_logs'), x, z, { height: 1.9 })
+      w.put(b, S('spaceCraftStand'), 0, 0, { height: 3 })
+      w.put(b, S('spaceCraft1'), 0, 0, { height: 16, yOff: 2 })
+      w.mark('The Landing Pad', 0, 0, 'zone')
+
+      for (let i = 0; i < 8; i++) {
+        const a = (i / 8) * Math.PI * 2
+        const r = 52
+        w.put(b, rng.pick([S('station'), S('stationLarge'), S('buildingOpen'),
+          S('buildingCorner'), S('buildingCorridor')]),
+          Math.cos(a) * r, Math.sin(a) * r, { height: 10, rotY: -a })
       }
+      for (let i = 0; i < 5; i++) {
+        const a = 0.4 + i * 1.2
+        w.put(b, rng.pick([S('satelliteDish'), S('satelliteDishLarge'), S('satelliteDishAntenna')]),
+          Math.cos(a) * 88, Math.sin(a) * 88, { height: 11, rotY: -a })
+      }
+      w.mark('Comms Array', 88, 20, 'landmark')
+
+      // Parked ships scattered further out.
+      for (const [n, x, z] of [['spaceCraft2', -110, 60], ['spaceCraft3', 120, -80],
+        ['spaceCraft4', -70, -120], ['spaceCraft5', 90, 120]]) {
+        w.put(b, S('spaceCraftStand'), x, z, { height: 3 })
+        w.put(b, S(n), x, z, { height: 14, yOff: 2 })
+        w.mark('Parked Ship', x, z, 'building')
+      }
+
+      w.fenceRect(b, S('metalFence'), 0, 0, 84, 84, 5, { height: 2.4 })
+      w.scatter(b, [S('crater'), S('craterLarge')], 0, 0, WORLD_HALF - 20, 90,
+        { width: 12, jitter: 0.4, minR: 60 })
+      w.scatter(b, [S('rocks'), S('rocksTall'), S('rocksSmall'), S('rocksOre'),
+        S('rocksSmallOre'), S('rocksTallOre')], 0, 0, WORLD_HALF - 20, 220,
+        { height: 3, jitter: 0.5, tilt: 0.1 })
+      w.scatter(b, [S('meteorFull'), S('meteorHalf'), S('meteorFullRound')],
+        0, 0, WORLD_HALF - 20, 60, { height: 4.5, jitter: 0.4 })
+      w.scatter(b, [S('pipeStraight'), S('pipeCorner'), S('pipeStand')],
+        0, 0, WORLD_HALF - 40, 70, { height: 2.4, minR: 60 })
+      w.scatter(b, [S('console'), S('consoleScreen')], 0, 0, WORLD_HALF - 50, 40,
+        { height: 2.4, minR: 55 })
+      w.scatter(b, [S('groundTileRough')], 0, 0, WORLD_HALF - 20, 120, { width: 9 })
+      w.scatter(b, [S('portal')], 0, 0, 130, 6, { height: 9, minR: 70 })
+    },
+  },
+
+  /* ══════════════════════════════════════════════════════════════════
+     CITY — cars are the best thing in the game to beam up, because they
+     are heavy, they tumble, and children love a stolen fire engine.
+     ═════════════════════════════════════════════════════════════════ */
+  {
+    id: 'city',
+    name: 'Moo York City',
+    icon: '🚕',
+    blurb: 'Beam up cars, taxis and fire engines!',
+    ground: 0x7fa451,
+    sand: 0xc9c3ac,
+    rock: 0x8d8b86,
+    sky: 'assets/sky/Panorama_Sky_01-512x512.png',
+    fog: { color: 0xc8dcee, near: 210, far: 460 },
+    sun: { color: 0xfff4e2, intensity: 2.5 },
+    hemi: { sky: 0xd8ecff, ground: 0x5a6b3a, intensity: 1.35 },
+    music: 'assets/audio/music/medical.ogg',
+    critters: { cow: 18, chicken: 16, pig: 12, sheep: 10 },
+    npcs: ['farmer', 'rambler', 'doctor', 'nurse', 'knight'],
+    npcCount: 34,
+    loot: ['taxi', 'firetruck', 'police', 'ambulancecar', 'van', 'garbagetruck',
+      'pizza', 'burger', 'donut', 'icecream'],
+    models: [
+      ...GRASS, ...FLOWERS, ...ROCKS_SMALL, N('tree_small'), N('tree_default'),
+      T('wall'), T('wall-door'), T('wall-window-glass'), T('wall-corner'),
+      T('roof-flat'), T('road'), T('road-bend'), T('road-corner'), T('lantern'),
+      T('hedge'), T('fountain-round'), T('stall'), T('stall-bench'), T('pillar-stone'),
+      CAR('sedan'), CAR('suv'), CAR('truck'), CAR('tractor'),
+    ],
+
+    build(w, b) {
+      const rng = w.rng
+      const U = 5
+
+      /* Tower blocks from repainted town modules. Each gets one flat colour
+         so a child can tell "the blue one" from "the pink one" at a glance. */
+      const BLOCK_COLOURS = [0xe8746a, 0x6aa9e8, 0xf2c14e, 0x8ed081, 0xc98ed0, 0xe8a26a]
+      BLOCK_COLOURS.forEach((c, i) => {
+        for (const key of ['wall', 'wall-window-glass', 'wall-corner', 'wall-door']) {
+          const src = w.models.get(T(key))
+          if (src) w.models.set(`blk${i}:${key}`, w.repaint(src.clone(true), c))
+        }
+        const roof = w.models.get(T('roof-flat'))
+        if (roof) w.models.set(`blk${i}:roof-flat`, w.repaint(roof.clone(true), 0x51555e))
+      })
+
+      const tower = (ox, oz, cols, rows, storeys, palette) => {
+        const P2 = (k) => `blk${palette}:${k}`
+        for (let ix = 0; ix < cols; ix++) {
+          for (let iz = 0; iz < rows; iz++) {
+            const edge = ix === 0 || iz === 0 || ix === cols - 1 || iz === rows - 1
+            const x = ox + (ix - (cols - 1) / 2) * U
+            const z = oz + (iz - (rows - 1) / 2) * U
+            if (edge) {
+              const corner = (ix === 0 || ix === cols - 1) && (iz === 0 || iz === rows - 1)
+              let face = 0
+              if (iz === 0) face = Math.PI / 2
+              else if (iz === rows - 1) face = -Math.PI / 2
+              else if (ix === 0) face = Math.PI
+              for (let s = 0; s < storeys; s++) {
+                let key = 'wall'
+                if (corner) key = 'wall-corner'
+                else if (s === 0 && ix === (cols >> 1) && iz === rows - 1) key = 'wall-door'
+                else if ((ix + iz + s) % 2 === 0) key = 'wall-window-glass'
+                w.put(b, P2(key), x, z, { height: U, rotY: face, yOff: s * U })
+              }
+            }
+            w.put(b, P2('roof-flat'), x, z, { width: U, yOff: storeys * U })
+          }
+        }
+      }
+
+      // A grid of blocks with roads between them.
+      let pi = 0
+      for (let gx = -1; gx <= 1; gx++) {
+        for (let gz = -1; gz <= 1; gz++) {
+          if (gx === 0 && gz === 0) continue
+          tower(gx * 76, gz * 76, 4, 4, 3 + ((gx + gz + 2) % 4), pi++ % BLOCK_COLOURS.length)
+        }
+      }
+      w.mark('Moo York City', 0, 0, 'zone')
+
+      // Road grid. Short runs only — long flat runs staircase over the terrain.
+      for (const at of [-38, 38]) {
+        for (let i = -18; i <= 18; i++) {
+          w.put(b, T('road'), i * 5, at, { width: 5, rotY: 0 })
+          w.put(b, T('road'), at, i * 5, { width: 5, rotY: Math.PI / 2 })
+        }
+      }
+      // Traffic parked along them.
+      for (let i = 0; i < 26; i++) {
+        const along = rng.range(-90, 90)
+        const lane = rng.pick([-38, 38])
+        const [x, z] = rng.chance(0.5) ? [along, lane + rng.pick([-2, 2])]
+                                       : [lane + rng.pick([-2, 2]), along]
+        w.put(b, rng.pick([CAR('sedan'), CAR('suv'), CAR('truck')]), x, z,
+          { height: 2.6, rotY: rng.chance(0.5) ? 0 : Math.PI / 2 })
+      }
+
+      w.put(b, T('fountain-round'), 0, 0, { width: 12 })
+      w.mark('City Fountain', 0, 0, 'landmark')
+      for (let i = 0; i < 24; i++) {
+        const a = (i / 24) * Math.PI * 2
+        w.put(b, T('lantern'), Math.cos(a) * 46, Math.sin(a) * 46, { height: 4.4 })
+      }
+      // Sized by width: these are low market stalls, and fitting them to a
+      // 3 m height turns each one into a giant table.
+      w.scatter(b, [T('stall')], 0, 0, 62, 14, { width: 4, minR: 20 })
+      w.scatter(b, [T('stall-bench')], 0, 0, 62, 14, { width: 2.4, minR: 20 })
+      w.scatter(b, [N('tree_small'), N('tree_default')], 0, 0, WORLD_HALF - 25, 170,
+        { height: 8, jitter: 0.3, minR: 110 })
+      w.scatter(b, [T('hedge')], 0, 0, WORLD_HALF - 30, 90, { width: 3, minR: 100 })
+      w.scatter(b, GRASS, 0, 0, WORLD_HALF - 20, 900, { height: 1.0, jitter: 0.4 })
+      w.scatter(b, FLOWERS, 0, 0, WORLD_HALF - 20, 380, { height: 0.9, jitter: 0.3 })
+      w.scatter(b, ROCKS_SMALL, 0, 0, WORLD_HALF - 20, 90, { height: 0.6, jitter: 0.5, tilt: 0.12 })
     },
   },
 

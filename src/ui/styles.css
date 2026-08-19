@@ -430,3 +430,9 @@ html, body {
   color: var(--lime);
   min-height: 1.6em;
 }
+
+/* ══ offline download ══════════════════════════════════════════════ */
+.bar.slim { height: 9px; width: min(300px, 78vw); margin: 10px auto 0; }
+#offlinebtn { margin-top: 14px; }
+#offlinebtn.done { border-color: var(--lime); color: var(--lime); }
+#offlinemsg { min-height: 1.4em; }

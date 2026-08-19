@@ -7,6 +7,9 @@ export const STATE = {
   IDLE: 0, WANDER: 1, FLEE: 2, LIFTED: 3, DONE: 4,
 }
 
+/** Scaled by the low-gravity event so everything floats comically. */
+export const PHYSICS = { gravity: 1 }
+
 let _id = 0
 
 /**
@@ -164,7 +167,7 @@ export class Abductable {
       if (this.stun <= 0) this.root.rotation.z *= 1 - Math.min(1, dt * 6)
       this.groundY = world.heightAt(p.x, p.z)
       if (p.y > this.groundY + 0.02) {
-        this.velY -= 26 * dt
+        this.velY -= 26 * PHYSICS.gravity * dt
         p.y += this.velY * dt
         if (p.y <= this.groundY) { p.y = this.groundY; this.velY = 0; this.lift = 0 }
       } else {
@@ -281,6 +284,9 @@ const HUMAN_KINDS = {
   wizard: { src: 'Mage', label: 'Wizard', icon: '🧙‍♂️', points: 340, uniform: 0x7a5bd0 },
   // jungle
   explorer: { src: 'Ranger', label: 'Explorer', icon: '🧭', points: 200, uniform: 0xd8c48a },
+  // moon
+  astronaut: { src: 'Knight', label: 'Astronaut', icon: '👨‍🚀', points: 300, uniform: 0xf2f4f7 },
+  spaceman: { src: 'Mage', label: 'Space Cadet', icon: '🚀', points: 280, uniform: 0xc8cdd6 },
 }
 
 export class HumanEntity extends Abductable {
@@ -422,7 +428,7 @@ export class PropEntity extends Abductable {
       this.state = STATE.IDLE
       this.groundY = world.heightAt(p.x, p.z)
       if (p.y > this.groundY + 0.02) {
-        this.velY -= 30 * dt
+        this.velY -= 30 * PHYSICS.gravity * dt
         p.y += this.velY * dt
         this.root.rotation.x += dt * 4
         if (p.y <= this.groundY) {
@@ -459,4 +465,23 @@ export const LOOT = {
   present: { path: 'assets/holiday/present-a-cube.glb', label: 'Present', icon: '🎁', points: 120, size: 2.4 },
   snowman: { path: 'assets/holiday/snowman.glb', label: 'Snowman', icon: '⛄', points: 160, size: 3.6 },
   fish: { path: 'assets/survival/fish-large.glb', label: 'Big Fish', icon: '🐟', points: 85, size: 2.4 },
+
+  // spooky — the graveyard kit ships these as models, so they can be beamed
+  ghost: { path: 'assets/graveyard/ghost.glb', label: 'Ghost', icon: '👻', points: 350, size: 3.0 },
+  zombie: { path: 'assets/graveyard/zombie.glb', label: 'Zombie', icon: '🧟', points: 280, size: 3.0 },
+  vampire: { path: 'assets/graveyard/vampire.glb', label: 'Vampire', icon: '🧛', points: 420, size: 3.0 },
+  pumpkincarved: { path: 'assets/graveyard/pumpkinTallCarved.glb', label: 'Jack-o-Lantern', icon: '🎃', points: 140, size: 2.4 },
+  coffin: { path: 'assets/graveyard/coffin.glb', label: 'Coffin', icon: '⚰️', points: 200, size: 3.4 },
+
+  // moon
+  spacebarrel: { path: 'assets/space/barrelLarge.obj', mtl: 'assets/space/barrelLarge.mtl', linear: false, label: 'Fuel Barrel', icon: '🛢️', points: 90, size: 2.4 },
+  meteor: { path: 'assets/space/meteorHalf.obj', mtl: 'assets/space/meteorHalf.mtl', linear: false, label: 'Meteor', icon: '☄️', points: 160, size: 3.0 },
+
+  // city — heavy, tumbling and hilarious to steal
+  taxi: { path: 'assets/cars/taxi.glb', label: 'Taxi', icon: '🚕', points: 260, size: 4.4 },
+  firetruck: { path: 'assets/cars/firetruck.glb', label: 'Fire Engine', icon: '🚒', points: 420, size: 5.2 },
+  police: { path: 'assets/cars/police.glb', label: 'Police Car', icon: '🚓', points: 320, size: 4.4 },
+  ambulancecar: { path: 'assets/cars/ambulance.glb', label: 'Ambulance', icon: '🚑', points: 380, size: 5.0 },
+  van: { path: 'assets/cars/van.glb', label: 'Van', icon: '🚐', points: 240, size: 4.6 },
+  garbagetruck: { path: 'assets/cars/garbageTruck.glb', label: 'Bin Lorry', icon: '🚛', points: 400, size: 5.4 },
 }

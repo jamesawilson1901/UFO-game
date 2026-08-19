@@ -34,6 +34,7 @@ export class Rival {
     this.pos = new THREE.Vector3()
     this.vel = new THREE.Vector3()
     this.state = RIVAL_STATE.ARRIVE
+    this.baseHp = 6
     this.hp = 6
     this.maxHp = 6
     this.alive = false
@@ -105,6 +106,9 @@ export class Rival {
     this.pos.set(Math.cos(a) * r, 40, Math.sin(a) * r)
     this.vel.set(0, 0, 0)
     this.state = RIVAL_STATE.ARRIVE
+    // Reset the tier too: the two-rivals event buffs maxHp, and without this
+    // every later rival in the session stays buffed.
+    this.maxHp = this.baseHp
     this.hp = this.maxHp
     this.alive = true
     this.stolen = 0

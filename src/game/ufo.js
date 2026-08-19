@@ -158,13 +158,13 @@ export class Ufo {
     this.vel.x += mv.x * a * dt
     this.vel.z += -mv.y * a * dt
 
-    // Beaming slows you down — you have to commit to a target.
-    const beamDrag = this.beamOn ? 2.4 : 1
-    const d = Math.exp(-this.drag * beamDrag * dt)
+    const d = Math.exp(-this.drag * dt)
     this.vel.x *= d
     this.vel.z *= d
 
-    const cap = (this.maxSpeed + this.boost * (this.boostMax - this.maxSpeed)) * (this.beamOn ? 0.45 : 1)
+    // Full speed while beaming: dragging a cow across a field at a crawl is
+    // the least fun part of the game.
+    const cap = this.maxSpeed + this.boost * (this.boostMax - this.maxSpeed)
     const sp = Math.hypot(this.vel.x, this.vel.z)
     if (sp > cap) { this.vel.x *= cap / sp; this.vel.z *= cap / sp }
 

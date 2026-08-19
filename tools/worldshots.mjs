@@ -9,7 +9,7 @@ await p.goto(URL_, { waitUntil: 'domcontentloaded' })
 await p.waitForSelector('#start:not(.hidden)', { timeout: 240000 })
 await p.click('#playbtn')
 
-for (let i = 0; i < 7; i++) {
+for (let i = 0; i < 9; i++) {
   await p.waitForSelector('#gobtn:not(.hidden)', { timeout: 240000 })
   const id = await p.evaluate(() => window.game.theme.id)
   await p.click('#gobtn')
@@ -39,6 +39,6 @@ for (let i = 0; i < 7; i++) {
   console.log(`shot ${id}`)
   await p.evaluate(() => { window.game.timeLeft = 0.1; for (let k=0;k<20;k++) window.game.update(1/60) })
   await p.waitForSelector('#results:not(.hidden)', { timeout: 30000 })
-  if (i < 6) await p.click('#againbtn')
+  if (i < 8) await p.click('#againbtn')
 }
 await b.close()

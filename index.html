@@ -8,6 +8,11 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <title>Cosmic Cow Caper</title>
+<link rel="manifest" href="./manifest.webmanifest" />
+<link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png" />
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+<meta name="apple-mobile-web-app-title" content="Cow Caper" />
+<meta name="description" content="Fly a flying saucer and beam up cows across nine silly worlds." />
 <link rel="stylesheet" href="./src/ui/styles.css" />
 </head>
 <body>
@@ -42,6 +47,9 @@
       <h1 class="title">Cosmic&nbsp;Cow<br /><span>Caper</span></h1>
       <p class="pitch">Fly your saucer. Beam up cows.<br />Zap the rival alien!</p>
       <button id="playbtn" class="bigbtn">PLAY</button>
+      <button id="offlinebtn" class="minibtn hidden">📥 MAKE IT WORK OFFLINE</button>
+      <div id="offlinebar" class="bar slim hidden"><i id="offlineprog"></i></div>
+      <p id="offlinemsg" class="tip"></p>
       <p id="besthint" class="tip"></p>
     </div>
   </div>

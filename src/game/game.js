@@ -8,7 +8,7 @@ import { THEMES, WORLD_HALF } from '../world/themes.js'
 import { Ufo } from './ufo.js'
 import { Lasers, Poofs } from './laser.js'
 import { Rival } from './rival.js'
-import { CritterEntity, HumanEntity, PropEntity, LOOT, STATE } from './entities.js'
+import { CritterEntity, HumanEntity, PropEntity, LOOT, STATE, PHYSICS } from './entities.js'
 import { Hud } from '../ui/hud.js'
 import { Minimap } from '../ui/minimap.js'
 import { rankFor } from './ranks.js'
@@ -147,8 +147,13 @@ export class Game {
     this.dropped = []
     this.nextRivalAt = 32 + Math.random() * 18
     this.ended = false
-    this.pointsMultiplier = 1
-    this.multiplierUntil = 0
+    /* Timed modifiers, held as absolute values with an expiry rather than
+       multiply-now / divide-later on a setTimeout. Timeouts ignore pause,
+       survive a round change, and compound if the same event fires twice —
+       which is how the mega beam once grew to 772 units wide. */
+    this.mods = { points: 1, pointsUntil: 0, beam: 1, beamUntil: 0, gravity: 1, gravityUntil: 0 }
+    this.baseBeamRadius = this.ufo.beamRadius
+    this.baseHoverY = this.ufo.hoverY
     this.nextEventAt = 24 + Math.random() * 12
     this.lastEventId = null
 
@@ -167,6 +172,7 @@ export class Game {
    * asset cache and is reused by every later round.
    */
   _teardown() {
+    PHYSICS.gravity = 1
     if (!this.scene) return
     const seen = new Set()
     this.scene.traverse((o) => {
@@ -247,14 +253,17 @@ export class Game {
     for (const name of theme.loot ?? []) {
       const def = LOOT[name]
       if (!def) continue
-      const g = await assets.glb(def.path)
-      if (!g) continue
-      this._propScenes.set(name, g.scene)
+      // Most loot is GLB; the space kit's is OBJ+MTL.
+      const scene = def.mtl
+        ? await assets.objMtl(def.path, def.mtl, { linearColors: def.linear !== false })
+        : (await assets.glb(def.path))?.scene
+      if (!scene) continue
+      this._propScenes.set(name, scene)
       const n = def.points > 200 ? 12 : 24
       for (let i = 0; i < n; i++) {
         const s = spot()
         if (!s) continue
-        const m = g.scene.clone(true)
+        const m = scene.clone(true)
         fitToWidth(m, def.size)
         this._add(new PropEntity(m, s.x, s.z, {
           label: def.label, icon: def.icon, points: def.points,
@@ -269,6 +278,19 @@ export class Game {
     if (!this.scene) return null
     const e = new CritterEntity(kind, x, z, this.rng, { golden })
     return this._add(e, { type: 'critter', kind, golden })
+  }
+
+  /** Spawn one loot item by catalogue name — used by the food-fight event. */
+  spawnLootAt(name, x, z) {
+    const def = LOOT[name]
+    const scene = this._propScenes?.get(name)
+    if (!def || !scene || !this.scene) return null
+    const m = scene.clone(true)
+    fitToWidth(m, def.size)
+    return this._add(new PropEntity(m, x, z, {
+      label: def.label, icon: def.icon, points: def.points,
+      radius: def.size, mass: 0.8 + def.size * 0.25,
+    }), { type: 'prop', name })
   }
 
   _add(e, spec = null) {
@@ -336,6 +358,21 @@ export class Game {
       'cow-moo': 'assets/audio/sfx/cow-moo.wav',
       slime_000: 'assets/audio/sfx/slime_000.ogg',
       slime_002: 'assets/audio/sfx/slime_000.ogg',
+      // A human voice shouting at you is worth ten sound effects to a
+      // five-year-old, and Kenney's pack is CC0.
+      v_ready: 'assets/audio/voice/ready.ogg',
+      v_set: 'assets/audio/voice/set.ogg',
+      v_go: 'assets/audio/voice/go.ogg',
+      v_levelup: 'assets/audio/voice/level_up.ogg',
+      v_powerup: 'assets/audio/voice/power_up.ogg',
+      v_highscore: 'assets/audio/voice/new_highscore.ogg',
+      v_hurry: 'assets/audio/voice/hurry_up.ogg',
+      v_timeover: 'assets/audio/voice/time_over.ogg',
+      v_win: 'assets/audio/voice/you_win.ogg',
+      v_congrats: 'assets/audio/voice/congratulations.ogg',
+      v_1: 'assets/audio/voice/1.ogg',
+      v_2: 'assets/audio/voice/2.ogg',
+      v_3: 'assets/audio/voice/3.ogg',
     }
     await Promise.all(Object.entries(files).map(([k, p]) => audio.load(k, p)))
     this.beamHum = audio.loop(SFX.beam, { volume: 0.5, rate: 0.85 })
@@ -404,6 +441,18 @@ export class Game {
     requestAnimationFrame(this._frame)
   }
 
+  /** "Ready… set… GO!" — a proper start makes the round feel like an event. */
+  countdownIn() {
+    const beats = [['v_3', '3'], ['v_2', '2'], ['v_1', '1'], ['v_go', 'GO!']]
+    beats.forEach(([clip, text], i) => {
+      setTimeout(() => {
+        if (!this.scene) return
+        audio.play(clip, { volume: 0.9, jitter: 0 })
+        this.hud.toast(text, i === 3 ? 0x8ef26a : 0xffd23f)
+      }, i * 700)
+    })
+  }
+
   pause(on) {
     this.paused = on
     audio.duckMusic(on)
@@ -436,6 +485,7 @@ export class Game {
       if (this.timeLeft <= 0) { this._endRound(); return }
       // Countdown urgency in the last ten seconds.
       const s = Math.ceil(this.timeLeft)
+      if (s === 30 && this._lastTick !== 30) audio.play('v_hurry', { volume: 0.9 })
       if (s <= 10 && s !== this._lastTick) {
         this._lastTick = s
         audio.play(SFX.clang, { volume: 0.5, rate: 1 + (10 - s) * 0.05 })
@@ -483,11 +533,24 @@ export class Game {
 
   /* ══ random events ═══════════════════════════════════════════════ */
 
+  /** Set a timed modifier. Re-firing extends it; it never compounds. */
+  setMod(name, value, seconds) {
+    this.mods[name] = value
+    this.mods[`${name}Until`] = this.t + seconds
+  }
+
+  _expireMods() {
+    const m = this.mods
+    if (m.points !== 1 && this.t > m.pointsUntil) { m.points = 1; this.hud.setAlert('') }
+    if (m.beam !== 1 && this.t > m.beamUntil) { m.beam = 1; this.hud.setAlert('') }
+    if (m.gravity !== 1 && this.t > m.gravityUntil) m.gravity = 1
+    this.ufo.beamRadius = this.baseBeamRadius * m.beam
+    this.ufo.hoverY = this.baseHoverY + (m.gravity < 1 ? 10 : 0)
+    PHYSICS.gravity = m.gravity
+  }
+
   _updateEvents(dt) {
-    if (this.pointsMultiplier > 1 && this.t > this.multiplierUntil) {
-      this.pointsMultiplier = 1
-      this.hud.setAlert('')
-    }
+    this._expireMods()
     if (this.ended || this.t < this.nextEventAt) return
     // Leave the last stretch clear so the finish isn't chaos.
     if (this.timeLeft < 25) { this.nextEventAt = 1e9; return }
@@ -498,7 +561,7 @@ export class Game {
     audio.play(SFX.deposit, { volume: 0.7, rate: 1.2 })
     this.shake = Math.max(this.shake, 0.5)
     ev.run(this)
-    if (ev.id === 'double') this.hud.setAlert('⭐ DOUBLE POINTS ⭐')
+    if (/double|superbeam/.test(ev.id)) audio.play('v_powerup', { volume: 0.9 })
   }
 
   /* ══ lasers ══════════════════════════════════════════════════════ */
@@ -679,7 +742,7 @@ export class Game {
     e.state = STATE.DONE
     e.root.visible = false
 
-    const mult = this.combo * this.pointsMultiplier
+    const mult = this.combo * this.mods.points
     const gained = Math.round(e.points * mult)
     this.score += gained
     this.stats.abducted++
@@ -743,6 +806,7 @@ export class Game {
     this.hud.setRank(rank.name, frac)
     if (index > this.rankIndex && !silent) {
       audio.play(SFX.deposit, { volume: 0.7 })
+      audio.play('v_levelup', { volume: 0.9 })
       this.hud.popup(`NEW RANK: ${rank.name}!`, innerWidth / 2, innerHeight * 0.4)
       this.burst(this.ufo.pos.clone(), 0xffd23f, 46, 11)
       this.shake = 1
@@ -782,6 +846,7 @@ export class Game {
     this.hud.setTime(0)
     this.input.releaseAll()
     audio.play(SFX.bigBoom, { volume: 0.5, rate: 0.7 })
+    audio.play('v_timeover', { volume: 0.95 })
     this.onRoundEnd?.({
       score: this.score,
       theme: this.theme,
